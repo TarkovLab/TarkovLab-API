@@ -1,92 +1,143 @@
+const { ApolloServer } = require('@apollo/server');
+const { expressMiddleware } = require('@apollo/server/express4');
 const express = require('express');
 const cors = require('cors');
+const http = require('http');
 const path = require('path');
 const fs = require('fs');
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+// ---------------------
+// Data loading
+// ---------------------
+const dataDir = path.join(__dirname, '..', 'TarkovData', 'data');
 
-// Enable CORS for frontend app
-app.use(cors());
-
-// Path to the TarkovData folder
-const dataDir = path.join(__dirname, '..', 'TarkovData');
-
-// Utility to read JSON
-const readJsonFile = (filename) => {
-    try {
-        const filePath = path.join(dataDir, filename);
-        if (fs.existsSync(filePath)) {
-            const data = fs.readFileSync(filePath, 'utf8');
-            return JSON.parse(data);
-        }
-    } catch (err) {
-        console.error(`Error reading ${filename}:`, err);
-    }
-    return null;
+const loadQuests = () => {
+  const filePath = path.join(dataDir, 'quests.json');
+  const raw = fs.readFileSync(filePath, 'utf8');
+  return JSON.parse(raw);
 };
 
-// --- Endpoints ---
+// ---------------------
+// GraphQL Schema
+// ---------------------
+const typeDefs = `#graphql
+  type GPS {
+    leftPercent: Float
+    topPercent: Float
+    floor: String
+  }
 
-// Check API health
-app.get('/', (req, res) => {
-    res.json({ message: 'TarkovLab API is running' });
-});
+  type Objective {
+    id: Int
+    type: String
+    target: String
+    number: Int
+    location: Int
+    gps: GPS
+  }
 
-// Get items
-app.get('/api/items', (req, res) => {
-    const data = readJsonFile('items.en.json');
-    if (data) return res.json(data);
-    res.status(404).json({ error: 'Items not found' });
-});
+  type Reputation {
+    trader: Int
+    rep: Float
+  }
 
-// Get quests
-app.get('/api/quests', (req, res) => {
-    const data = readJsonFile('quests.json');
-    if (data) return res.json(data);
-    res.status(404).json({ error: 'Quests not found' });
-});
+  type QuestRequirement {
+    level: Int
+    quests: [Int]
+  }
 
-// Get hideout
-app.get('/api/hideout', (req, res) => {
-    const data = readJsonFile('hideout.json');
-    if (data) return res.json(data);
-    res.status(404).json({ error: 'Hideout not found' });
-});
+  type Locales {
+    en: String
+    ru: String
+    cs: String
+  }
 
-// Get maps
-app.get('/api/maps', (req, res) => {
-    const data = readJsonFile('maps.json');
-    if (data) return res.json(data);
-    res.status(404).json({ error: 'Maps not found' });
-});
+  type Quest {
+    id: Int!
+    title: String!
+    locales: Locales
+    wiki: String
+    exp: Int
+    giver: Int
+    turnin: Int
+    gameId: String
+    require: QuestRequirement
+    unlocks: [String]
+    reputation: [Reputation]
+    objectives: [Objective]
+  }
 
-// Get traders
-app.get('/api/traders', (req, res) => {
-    const data = readJsonFile('traders.json');
-    if (data) return res.json(data);
-    res.status(404).json({ error: 'Traders not found' });
-});
+  type Query {
+    """Get all quests"""
+    quests: [Quest!]!
 
-// Get ammunition
-app.get('/api/ammunition', (req, res) => {
-    const data = readJsonFile('ammunition.json');
-    if (data) return res.json(data);
-    res.status(404).json({ error: 'Ammunition not found' });
-});
+    """Get a single quest by its id"""
+    quest(id: Int!): Quest
 
-// Get generic endpoint for any other JSON in TarkovData
-app.get('/api/data/:filename', (req, res) => {
-    const { filename } = req.params;
-    // ensure no directory traversal
-    if (filename.includes('..') || filename.includes('/')) {
-        return res.status(400).json({ error: 'Invalid filename' });
-    }
-    const data = readJsonFile(filename.endsWith('.json') ? filename : `${filename}.json`);
-    if (data) return res.json(data);
-    res.status(404).json({ error: 'Data not found' });
-});
+    """Get quests given by a specific trader (by trader index)"""
+    questsByTrader(trader: Int!): [Quest!]!
+  }
+`;
 
-app.listen(PORT, () => {
-    console.log(`Server is listening on port ${PORT}`);
+// ---------------------
+// Resolvers
+// ---------------------
+const resolvers = {
+  Query: {
+    quests: () => loadQuests(),
+    quest: (_, { id }) => {
+      const quests = loadQuests();
+      return quests.find((q) => q.id === id) || null;
+    },
+    questsByTrader: (_, { trader }) => {
+      const quests = loadQuests();
+      return quests.filter((q) => q.giver === trader);
+    },
+  },
+};
+
+// ---------------------
+// Server bootstrap
+// ---------------------
+async function startServer() {
+  const app = express();
+  const httpServer = http.createServer(app);
+
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    // Enable the embedded Apollo Sandbox (playground) in all environments
+    introspection: true,
+  });
+
+  await server.start();
+
+  // Health check – classic REST endpoint
+  app.get('/health', (_req, res) => {
+    res.status(200).json({ status: 'OK' });
+  });
+
+  // GraphQL endpoint with Apollo Sandbox as playground
+  app.use(
+    '/graphql',
+    cors(),
+    express.json(),
+    expressMiddleware(server),
+  );
+
+  // Redirect root to playground
+  app.get('/', (_req, res) => {
+    res.redirect('/graphql');
+  });
+
+  const PORT = process.env.PORT || 3001;
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
+    console.log(`❤️  Health check at http://localhost:${PORT}/health`);
+  });
+}
+
+startServer().catch((err) => {
+  console.error('Failed to start server:', err);
+  process.exit(1);
 });
