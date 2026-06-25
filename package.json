@@ -20,6 +20,6 @@
   "homepage": "https://github.com/TarkovLab/Tarkovlab-api#readme",
   "dependencies": {
     "cors": "^2.8.6",
-    "express": "^5.2.1"
+    "express": "^4.22.2"
   }
 }
