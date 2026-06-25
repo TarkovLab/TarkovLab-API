@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TarkovLab - API Terminal</title>
+  
+  <!-- Google Fonts: Bebas Neue for headers, Inter for UI text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Fira+Mono&display=swap" rel="stylesheet">
+  
+  <!-- CodeMirror CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+  
+  <style>
+    /* ----------------------------------------------------------------
+       TARKOV SOBER DESIGN SYSTEM
+       ---------------------------------------------------------------- */
+    :root {
+      /* Backgrounds */
+      --bg-main: #111111;
+      --bg-panel: #1a1a1a;
+      --bg-header: #0d0d0d;
+      --bg-input: #0a0a0a;
+      
+      /* Borders */
+      --border-color: #2d2d2d;
+      --border-highlight: #444444;
+      
+      /* Text Colors */
+      --text-bright: #e3e3e3;
+      --text-standard: #a3a3a3;
+      --text-muted: #666666;
+      
+      /* Accent Colors */
+      --accent-yellow: #dca842;
+      --accent-yellow-hover: #f5bc51;
+      --accent-yellow-dim: #9e762b;
+      
+      --accent-green: #556046;
+      --accent-green-bright: #8c9e74;
+      
+      --accent-red: #8c2e2e;
+      --accent-red-bright: #b84444;
+      
+      /* Fonts */
+      --font-header: 'Bebas Neue', sans-serif;
+      --font-ui: 'Inter', sans-serif;
+      --font-mono: 'Fira Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-standard);
+      font-family: var(--font-ui);
+      font-size: 13px;
+      line-height: 1.5;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ----------------------------------------------------------------
+       LAYOUT STRUCTURE
+       ---------------------------------------------------------------- */
+    .header {
+      height: 50px;
+      background-color: var(--bg-header);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-accent {
+      width: 8px;
+      height: 18px;
+      background-color: var(--accent-yellow);
+    }
+
+    .logo-text {
+      font-family: var(--font-header);
+      font-size: 24px;
+      letter-spacing: 1.5px;
+      color: var(--text-bright);
+    }
+
+    .logo-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 2px 6px;
+      background-color: rgba(0, 0, 0, 0.2);
+      text-transform: uppercase;
+    }
+
+    /* Navigation Tabs */
+    .tabs-container {
+      display: flex;
+      height: 100%;
+      align-items: center;
+    }
+
+    .tab-btn {
+      font-family: var(--font-header);
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      height: 100%;
+      padding: 0 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-bright);
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-yellow);
+      border-bottom-color: var(--accent-yellow);
+      background-color: rgba(220, 168, 66, 0.02);
+    }
+
+    .system-info {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 15px;
+    }
+
+    .system-info span {
+      color: var(--text-standard);
+    }
+
+    /* Main Container */
+    .main-content {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background-color: var(--bg-main);
+    }
+
+    .tab-pane {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      padding: 20px;
+    }
+
+    .tab-pane.active {
+      display: flex;
+    }
+
+    /* Footer */
+    .footer {
+      height: 30px;
+      background-color: var(--bg-header);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .footer span {
+      color: var(--text-standard);
+    }
+
+    /* ----------------------------------------------------------------
+       COMMON UI COMPONENTS
+       ---------------------------------------------------------------- */
+    .panel {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .panel-header {
+      height: 35px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: rgba(0, 0, 0, 0.15);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 15px;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-family: var(--font-header);
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: var(--text-bright);
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      background-color: var(--accent-yellow);
+    }
+
+    .panel-header-desc {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    /* Buttons */
+    .btn-tarkov {
+      font-family: var(--font-header);
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      background-color: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      color: var(--text-standard);
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      text-transform: uppercase;
+    }
+
+    .btn-tarkov:hover {
+      border-color: var(--border-highlight);
+      color: var(--text-bright);
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .btn-tarkov:active {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-tarkov.active {
+      border-color: var(--accent-yellow);
+      color: var(--accent-yellow);
+      background-color: rgba(220, 168, 66, 0.04);
+    }
+
+    /* Primary Run Button */
+    .btn-tarkov-primary {
+      font-family: var(--font-header);
+      font-size: 16px;
+      letter-spacing: 1px;
+      background-color: var(--accent-yellow);
+      color: #000000;
+      border: none;
+      padding: 8px 24px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.1s;
+      text-transform: uppercase;
+    }
+
+    .btn-tarkov-primary:hover {
+      background-color: var(--accent-yellow-hover);
+    }
+
+    .btn-tarkov-primary:active {
+      background-color: var(--accent-yellow-dim);
+    }
+
+    .btn-tarkov-primary:disabled {
+      background-color: #333333;
+      color: #666666;
+      cursor: not-allowed;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-main);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-highlight);
+    }
+
+    /* ----------------------------------------------------------------
+       TAB: CONSOLE (IDE)
+       ---------------------------------------------------------------- */
+    .console-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .editor-section {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .presets-bar {
+      display: flex;
+      gap: 6px;
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: rgba(0, 0, 0, 0.1);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .presets-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-right: 5px;
+      text-transform: uppercase;
+    }
+
+    .editor-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .action-bar {
+      height: 55px;
+      background-color: rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+    }
+
+    .action-status {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .action-status-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .action-status-value {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-standard);
+    }
+
+    /* CodeMirror Theme Override (Sober & Flat) */
+    .CodeMirror {
+      height: 100% !important;
+      background-color: var(--bg-input) !important;
+      color: var(--text-bright) !important;
+      font-family: var(--font-mono) !important;
+      font-size: 12px !important;
+    }
+    .CodeMirror-gutters {
+      background-color: var(--bg-panel) !important;
+      border-right: 1px solid var(--border-color) !important;
+    }
+    .CodeMirror-linenumber {
+      color: var(--text-muted) !important;
+    }
+    .CodeMirror-cursor {
+      border-left: 1.5px solid var(--accent-yellow) !important;
+    }
+    
+    /* Plain flat editor colors */
+    .cm-keyword { color: var(--accent-yellow) !important; font-weight: 500; }
+    .cm-string { color: var(--accent-green-bright) !important; }
+    .cm-number { color: #a5b4fc !important; }
+    .cm-property { color: var(--text-bright) !important; }
+    .cm-def { color: var(--text-bright) !important; }
+    .cm-comment { color: var(--text-muted) !important; }
+    .CodeMirror-selected { background: rgba(255, 255, 255, 0.05) !important; }
+
+    /* Output Section */
+    .output-section {
+      height: 100%;
+    }
+
+    .output-info-bar {
+      height: 25px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 0 12px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .output-info-item span {
+      color: var(--text-standard);
+    }
+
+    .output-container {
+      flex: 1;
+      position: relative;
+      overflow: auto;
+      background-color: var(--bg-input);
+    }
+
+    .output-pre {
+      padding: 12px;
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #9fadb5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    /* ----------------------------------------------------------------
+       TAB: TASK LOG
+       ---------------------------------------------------------------- */
+    .task-log-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 15px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .task-sidebar {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .task-filter-box {
+      padding: 10px;
+      border-bottom: 1px solid var(--border-color);
+      background-color: rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .search-input {
+      width: 100%;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-bright);
+      padding: 6px 10px;
+      font-family: var(--font-ui);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--border-highlight);
+    }
+
+    .task-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .task-list-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(45, 45, 45, 0.5);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .task-list-item:hover {
+      background-color: rgba(255, 255, 255, 0.01);
+    }
+
+    .task-list-item.active {
+      background-color: rgba(220, 168, 66, 0.03);
+      border-left: 2px solid var(--accent-yellow);
+    }
+
+    .task-item-title {
+      font-family: var(--font-ui);
+      font-weight: 500;
+      font-size: 12.5px;
+      color: var(--text-bright);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-item-trader {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .task-item-status-dot {
+      width: 5px;
+      height: 5px;
+      background-color: var(--accent-green-bright);
+      flex-shrink: 0;
+    }
+
+    /* Details Panel */
+    .task-details-pane {
+      height: 100%;
+    }
+
+    .task-details-container {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .task-details-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .task-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .task-category-tag {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--accent-yellow);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .task-dossier-title {
+      font-family: var(--font-header);
+      font-size: 28px;
+      letter-spacing: 0.5px;
+      color: var(--text-bright);
+      line-height: 1.1;
+    }
+
+    .task-meta-table {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      font-size: 11px;
+      background-color: rgba(0, 0, 0, 0.1);
+      padding: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .meta-label {
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+
+    .meta-value {
+      color: var(--text-bright);
+      font-weight: 500;
+    }
+
+    .meta-value.highlight {
+      color: var(--accent-yellow);
+    }
+
+    .task-section-title {
+      font-family: var(--font-header);
+      font-size: 15px;
+      letter-spacing: 0.5px;
+      color: var(--text-bright);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    /* Objectives & Rewards */
+    .rewards-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .reward-box {
+      background-color: rgba(0, 0, 0, 0.15);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      min-width: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .reward-val {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: bold;
+      color: var(--accent-yellow);
+    }
+
+    .reward-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .objectives-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .objective-row {
+      background-color: rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border-color);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+    }
+
+    .objective-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .objective-checkbox {
+      width: 12px;
+      height: 12px;
+      border: 1px solid var(--text-muted);
+      background-color: var(--bg-input);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .objective-checkbox.checked::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background-color: var(--accent-yellow);
+    }
+
+    .objective-text {
+      color: var(--text-standard);
+      font-size: 12px;
+    }
+
+    .objective-badge {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      text-transform: uppercase;
+      padding: 1px 5px;
+      border: 1px solid var(--border-color);
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    /* GPS coordinates plain layout */
+    .coords-table {
+      margin-top: 8px;
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 10px;
+    }
+
+    .coords-table th, .coords-table td {
+      border: 1px solid var(--border-color);
+      padding: 4px 8px;
+      text-align: left;
+    }
+
+    .coords-table th {
+      background-color: rgba(0, 0, 0, 0.2);
+      color: var(--text-muted);
+    }
+
+    .coords-table td {
+      color: var(--accent-green-bright);
+    }
+
+    .no-task-selected {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      gap: 10px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    /* ----------------------------------------------------------------
+       TAB: TRADERS
+       ---------------------------------------------------------------- */
+    .traders-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      padding-bottom: 15px;
+    }
+
+    .trader-card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+
+    .trader-card:hover {
+      border-color: var(--border-highlight);
+      background-color: rgba(255, 255, 255, 0.005);
+    }
+
+    .trader-card-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    .trader-name {
+      font-family: var(--font-header);
+      font-size: 20px;
+      letter-spacing: 0.5px;
+      color: var(--text-bright);
+    }
+
+    .trader-role {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--accent-yellow);
+      text-transform: uppercase;
+    }
+
+    .trader-description {
+      font-size: 11.5px;
+      color: var(--text-standard);
+      line-height: 1.4;
+      margin-bottom: 15px;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      height: 64px;
+    }
+
+    .trader-stats {
+      margin-top: auto;
+      border-top: 1px dashed var(--border-color);
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: var(--text-muted);
+    }
+
+    .trader-stats span {
+      color: var(--text-standard);
+    }
+
+    /* ----------------------------------------------------------------
+       TAB: SCHEMA (API REFERENCE)
+       ---------------------------------------------------------------- */
+    .schema-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 15px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .schema-sidebar {
+      overflow-y: auto;
+    }
+
+    .schema-nav-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid rgba(45, 45, 45, 0.5);
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .schema-nav-item:hover {
+      background-color: rgba(255, 255, 255, 0.01);
+      color: var(--text-bright);
+    }
+
+    .schema-nav-item.active {
+      background-color: rgba(220, 168, 66, 0.02);
+      border-left: 2px solid var(--accent-yellow);
+      color: var(--accent-yellow);
+    }
+
+    .schema-nav-badge {
+      font-size: 8.5px;
+      border: 1px solid var(--border-color);
+      padding: 0px 4px;
+      color: var(--text-muted);
+    }
+
+    .schema-details {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .schema-details-title {
+      font-family: var(--font-header);
+      font-size: 24px;
+      color: var(--text-bright);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .schema-details-subtitle {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .schema-description {
+      font-size: 12.5px;
+      color: var(--text-standard);
+      margin-bottom: 20px;
+      background-color: rgba(0, 0, 0, 0.1);
+      padding: 10px 12px;
+      border-left: 2px solid var(--accent-yellow);
+    }
+
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      margin-top: 10px;
+    }
+
+    .schema-table th, .schema-table td {
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    .schema-table th {
+      background-color: rgba(0, 0, 0, 0.25);
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .schema-table td.field-name {
+      color: var(--accent-yellow);
+      font-weight: bold;
+    }
+
+    .schema-table td.field-type {
+      color: var(--accent-green-bright);
+    }
+
+    .schema-table td.field-desc {
+      color: var(--text-standard);
+      font-family: var(--font-ui);
+      font-size: 12px;
+    }
+
+    .d-none { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo-container">
+      <div class="logo-accent"></div>
+      <span class="logo-text">TarkovLab</span>
+      <span class="logo-tag">API TERMINAL</span>
+    </div>
+
+    <nav class="tabs-container">
+      <button class="tab-btn active" data-tab="console-tab" onclick="switchTab('console-tab')">CONSOLE</button>
+      <button class="tab-btn" data-tab="tasks-tab" onclick="switchTab('tasks-tab')">TASK LOG</button>
+      <button class="tab-btn" data-tab="traders-tab" onclick="switchTab('traders-tab')">TRADERS</button>
+      <button class="tab-btn" data-tab="schema-tab" onclick="switchTab('schema-tab')">API REFERENCE</button>
+    </nav>
+
+    <div class="system-info">
+      <div>SYS: <span>ONLINE</span></div>
+      <div>SECURE: <span>YES</span></div>
+      <div>TIME: <span id="clock">00:00:00</span></div>
+    </div>
+  </header>
+
+  <!-- Main Content View -->
+  <main class="main-content">
+
+    <!-- --------------------------------------------------------
+         TAB 1: CONSOLE
+         -------------------------------------------------------- -->
+    <div id="console-tab" class="tab-pane active">
+      <div class="console-layout">
+        
+        <!-- Editor Panel -->
+        <div class="panel editor-section">
+          <div class="panel-header">
+            <span class="panel-title">GraphQL Editor</span>
+            <span class="panel-header-desc">Input Query</span>
+          </div>
+          
+          <div class="presets-bar">
+            <span class="presets-label">Presets:</span>
+            <button class="btn-tarkov" onclick="loadQueryPreset('allQuests')">All Quests</button>
+            <button class="btn-tarkov" onclick="loadQueryPreset('singleQuest')">Single Quest</button>
+            <button class="btn-tarkov" onclick="loadQueryPreset('questsByTrader')">By Trader</button>
+          </div>
+
+          <div class="editor-container">
+            <textarea id="graphql-editor"></textarea>
+          </div>
+
+          <div class="action-bar">
+            <div class="action-status">
+              <span class="action-status-label">Status</span>
+              <span id="uplink-status-value" class="action-status-value">Ready</span>
+            </div>
+            <button id="btn-deploy" class="btn-tarkov-primary" onclick="runQuery()">
+              RUN QUERY
+            </button>
+          </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="panel output-section">
+          <div class="panel-header">
+            <span class="panel-title">Response</span>
+            <span class="panel-header-desc">JSON Payload</span>
+          </div>
+          <div class="output-info-bar">
+            <div class="output-info-item">STATUS: <span id="telemetry-status">N/A</span></div>
+            <div class="output-info-item">TIME: <span id="telemetry-rtt">N/A</span></div>
+            <div class="output-info-item">SIZE: <span id="telemetry-size">N/A</span></div>
+          </div>
+          <div class="output-container">
+            <pre class="output-pre"><code id="telemetry-output">// Enter query and execute to view API output.</code></pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- --------------------------------------------------------
+         TAB 2: TASK LOG
+         -------------------------------------------------------- -->
+    <div id="tasks-tab" class="tab-pane">
+      <div class="task-log-layout">
+        
+        <!-- Sidebar: Tasks List -->
+        <div class="panel task-sidebar">
+          <div class="panel-header">
+            <span class="panel-title">Tasks</span>
+            <span class="panel-header-desc">Active ledger</span>
+          </div>
+          
+          <div class="task-filter-box">
+            <input id="task-search" type="text" class="search-input" placeholder="Filter by name or target..." oninput="filterQuests()">
+            <select id="trader-filter-select" class="search-input" style="font-size: 11px; padding: 4px;" onchange="filterQuests()">
+              <option value="all">Filter by Trader...</option>
+              <option value="0">Prapor</option>
+              <option value="1">Therapist</option>
+              <option value="2">Skier</option>
+              <option value="3">Peacekeeper</option>
+              <option value="4">Mechanic</option>
+              <option value="5">Ragman</option>
+              <option value="6">Jaeger</option>
+              <option value="7">Fence</option>
+            </select>
+          </div>
+
+          <div id="task-list-container" class="task-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Main Details -->
+        <div class="panel task-details-pane" style="flex: 1;">
+          <div class="panel-header">
+            <span class="panel-title">Task Specification</span>
+            <span class="panel-header-desc">Dossier Details</span>
+          </div>
+          <div id="task-details-content" class="task-details-container">
+            <div class="no-task-selected">
+              <div style="font-family: var(--font-header); font-size: 20px; color: var(--text-standard);">Select a Task</div>
+              <div style="font-size: 12px; max-width: 260px; color: var(--text-muted);">Select a task from the list to view its description, requirements, rewards, and coordinates.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- --------------------------------------------------------
+         TAB 3: TRADERS
+         -------------------------------------------------------- -->
+    <div id="traders-tab" class="tab-pane">
+      <div id="traders-container" class="traders-grid">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+
+    <!-- --------------------------------------------------------
+         TAB 4: API REFERENCE (SCHEMA)
+         -------------------------------------------------------- -->
+    <div id="schema-tab" class="tab-pane">
+      <div class="schema-layout">
+        
+        <!-- Sidebar: Types -->
+        <div class="panel schema-sidebar">
+          <div class="panel-header">
+            <span class="panel-title">Types</span>
+            <span class="panel-header-desc">Schema Objects</span>
+          </div>
+          <div class="schema-nav-list">
+            <div class="schema-nav-item active" onclick="showSchemaType('Query')">Query <span class="schema-nav-badge">Query</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('Quest')">Quest <span class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('Objective')">Objective <span class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('GPS')">GPS <span class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('Reputation')">Reputation <span class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('QuestRequirement')">QuestRequirement <span class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('Locales')">Locales <span class="schema-nav-badge">Type</span></div>
+          </div>
+        </div>
+
+        <!-- Main Details -->
+        <div class="panel" style="flex: 1; overflow: hidden;">
+          <div class="panel-header">
+            <span class="panel-title">Definition</span>
+            <span class="panel-header-desc">Attributes & Descriptions</span>
+          </div>
+          <div id="schema-details-content" class="schema-details">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>COORDINATES: <span>55.7558° N, 37.6173° E</span></div>
+    <div>ACTIVE UPLINK SESSION</div>
+    <div>PACKETS: <span id="packets-count">0</span> RECEIVED</div>
+  </footer>
+
+  <!-- CodeMirror Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+
+  <!-- Front-End Script -->
+  <script>
+    let allQuests = [];
+    let selectedQuestId = null;
+    let queryEditor = null;
+    let totalPackets = 0;
+    
+    // Trader details mapper
+    const tradersData = {
+      0: {
+        name: "Prapor",
+        title: "Pavel Yegorovich Romanenko",
+        specialty: "Soviet weaponry & ammo",
+        location: "Customs Supply Base",
+        description: "Warrant officer in charge of the supply base at the Internal Troops. Deals in Soviet bloc weapons, ammunition, grenades, and heavy tactical gear."
+      },
+      1: {
+        name: "Therapist",
+        title: "Elvira Khabibullina",
+        specialty: "Medical supplies & food",
+        location: "Tarkov City Hospital",
+        description: "Head of the Trauma Care Department of the Tarkov City Hospital. Deals in medical supplies, diagnostic kits, food, water, and keys."
+      },
+      2: {
+        name: "Skier",
+        title: "Alexander Fyodorovich Kiselev",
+        specialty: "Weapon mods & armor",
+        location: "Customs Port Terminal",
+        description: "Port authority employee. Deals in weapon attachments, armor rigs, custom gunsmith items, and general black market gear."
+      },
+      3: {
+        name: "Peacekeeper",
+        title: "Tadeusz Pilsudski",
+        specialty: "NATO weaponry & gear",
+        location: "UN supply base",
+        description: "UN logistics officer. Deals in Western bloc weapons (M4A1, SCAR, HK416), high-grade NATO ammunition, modern helmets, and tactical vests."
+      },
+      4: {
+        name: "Mechanic",
+        title: "Sergey Arsenyevich Samoylov",
+        specialty: "High-tech weapon mods",
+        location: "Chemical Factory",
+        description: "A highly talented, reclusive engineer and gunsmith. Deals in high-tech firearm modifications, Glock weapon parts, and repair kits."
+      },
+      5: {
+        name: "Ragman",
+        title: "Abramyan Arshavir Sarkisovich",
+        specialty: "Armor, rigs & clothing",
+        location: "ULTRA Shopping Mall",
+        description: "Clothing market director in the suburbs. Deals in tactical rigs, body armor, backpacks, helmets, and face shields."
+      },
+      6: {
+        name: "Jaeger",
+        title: "Ivan Kharitonovich Kolymagin",
+        specialty: "Survival gear & shotguns",
+        location: "Priozersky Reserve",
+        description: "A survivalist, forest ranger, and expert hunter. Deals in shotguns, sniper rifles, survival provisions, and hideout structural supplies."
+      },
+      7: {
+        name: "Fence",
+        title: "Anonymous",
+        specialty: "Black market items",
+        location: "Distributed Networks",
+        description: "An anonymous network coordinator. Deals in all items sold to him by other PMC operators. Handles scav karma exchanges."
+      }
+    };
+
+    // Schema definitions
+    const schemaDocs = {
+      Query: {
+        description: "The root query fields to retrieve task profiles.",
+        fields: [
+          { name: "quests", type: "[Quest!]!", desc: "Acquires the full ledger of all tasks/quests." },
+          { name: "quest(id: Int!)", type: "Quest", desc: "Retrieves a single quest profile by its integer ID." },
+          { name: "questsByTrader(trader: Int!)", type: "[Quest!]!", desc: "Retrieves all quests issued by a specific trader using their index (0-7)." }
+        ]
+      },
+      Quest: {
+        description: "A task description containing prerequisites, rewards, and objectives.",
+        fields: [
+          { name: "id", type: "Int!", desc: "Unique identifier for this quest." },
+          { name: "title", type: "String!", desc: "Operational name of the task." },
+          { name: "locales", type: "Locales", desc: "Translations for international operations." },
+          { name: "wiki", type: "String", desc: "External link to reference database (Fandom Wiki)." },
+          { name: "exp", type: "Int", desc: "Experience points awarded upon completion." },
+          { name: "giver", type: "Int", desc: "ID of the trader who issued the task (0-7)." },
+          { name: "turnin", type: "Int", desc: "ID of the trader who receives the completed task (0-7)." },
+          { name: "gameId", type: "String", desc: "Raw internal database hash code." },
+          { name: "require", type: "QuestRequirement", desc: "PMC requirements that must be met to unlock this task." },
+          { name: "unlocks", type: "[String]", desc: "Array of game hashes unlocked upon completion." },
+          { name: "reputation", type: "[Reputation]", desc: "Reputation standing adjustments awarded." },
+          { name: "objectives", type: "[Objective]", desc: "Operational objectives that must be fulfilled." }
+        ]
+      },
+      Objective: {
+        description: "A specific action that must be taken to satisfy a task's requirements.",
+        fields: [
+          { name: "id", type: "Int", desc: "Objective identifier index." },
+          { name: "type", type: "String", desc: "Action type: 'kill', 'collect', 'pickup', 'key', 'locate', etc." },
+          { name: "target", type: "String", desc: "Target name, item hash, or specific description of the objective." },
+          { name: "number", type: "Int", desc: "Count or quantity required." },
+          { name: "location", type: "Int", desc: "Location ID where the objective must be completed." },
+          { name: "gps", type: "GPS", desc: "Tactical positioning coordinates, if available." }
+        ]
+      },
+      GPS: {
+        description: "Tactical positioning coordinates mapping the location of an objective.",
+        fields: [
+          { name: "leftPercent", type: "Float", desc: "X-axis percentage offset on the map." },
+          { name: "topPercent", type: "Float", desc: "Y-axis percentage offset on the map." },
+          { name: "floor", type: "String", desc: "Elevation or floor layer where the objective is located." }
+        ]
+      },
+      Reputation: {
+        description: "Reputation adjustment data indicating standing shifts with traders.",
+        fields: [
+          { name: "trader", type: "Int", desc: "ID of the trader whose reputation is adjusted (0-7)." },
+          { name: "rep", type: "Float", desc: "Numeric value added or subtracted from standing." }
+        ]
+      },
+      QuestRequirement: {
+        description: "Prerequisites required of the PMC operator before the task unlocks.",
+        fields: [
+          { name: "level", type: "Int", desc: "Minimum PMC level required." },
+          { name: "quests", type: "[Int]", desc: "Prior quest IDs that must be completed." }
+        ]
+      },
+      Locales: {
+        description: "Localization strings.",
+        fields: [
+          { name: "en", type: "String", desc: "English localization." },
+          { name: "ru", type: "String", desc: "Russian localization." },
+          { name: "cs", type: "String", desc: "Czech localization." }
+        ]
+      }
+    };
+
+    // Presets
+    const queryPresets = {
+      allQuests: `query FetchAllQuests {
+  quests {
+    id
+    title
+    giver
+    exp
+    wiki
+    objectives {
+      type
+      target
+      number
+      gps {
+        leftPercent
+        topPercent
+        floor
+      }
+    }
+  }
+}`,
+      singleQuest: `query FetchSingleQuest {
+  quest(id: 1) {
+    id
+    title
+    exp
+    giver
+    turnin
+    wiki
+    require {
+      level
+      quests
+    }
+    reputation {
+      trader
+      rep
+    }
+    objectives {
+      type
+      target
+      number
+    }
+  }
+}`,
+      questsByTrader: `query FetchQuestsByTrader {
+  questsByTrader(trader: 0) {
+    id
+    title
+    exp
+    wiki
+    objectives {
+      type
+      target
+      number
+    }
+  }
+}`
+    };
+
+    // ----------------------------------------------------------------
+    // APP LIFECYCLE
+    // ----------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', async () => {
+      startClock();
+      initEditor();
+      queryEditor.setValue(queryPresets.allQuests);
+      
+      await fetchAllQuestsFromServer();
+      
+      populateQuestList();
+      populateTradersTab();
+      showSchemaType('Query');
+    });
+
+    function initEditor() {
+      const editorTextarea = document.getElementById('graphql-editor');
+      queryEditor = CodeMirror.fromTextArea(editorTextarea, {
+        mode: 'javascript',
+        lineNumbers: true,
+        theme: 'default',
+        tabSize: 2,
+        indentWithTabs: false,
+        lineWrapping: true
+      });
+    }
+
+    function startClock() {
+      const clockEl = document.getElementById('clock');
+      setInterval(() => {
+        const d = new Date();
+        const hrs = String(d.getHours()).padStart(2, '0');
+        const mins = String(d.getMinutes()).padStart(2, '0');
+        const secs = String(d.getSeconds()).padStart(2, '0');
+        clockEl.textContent = `${hrs}:${mins}:${secs}`;
+      }, 1000);
+    }
+
+    // ----------------------------------------------------------------
+    // GRAPHQL API INTERACTION
+    // ----------------------------------------------------------------
+    async function fetchAllQuestsFromServer() {
+      const query = `query {
+        quests {
+          id
+          title
+          wiki
+          exp
+          giver
+          turnin
+          gameId
+          require {
+            level
+            quests
+          }
+          unlocks
+          reputation {
+            trader
+            rep
+          }
+          objectives {
+            id
+            type
+            target
+            number
+            location
+            gps {
+              leftPercent
+              topPercent
+              floor
+            }
+          }
+        }
+      }`;
+      
+      try {
+        const res = await fetch('/graphql', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({ query })
+        });
+        const result = await res.json();
+        if (result.data && result.data.quests) {
+          allQuests = result.data.quests;
+          totalPackets += 1;
+          document.getElementById('packets-count').textContent = totalPackets;
+        }
+      } catch (err) {
+        console.error("Failed to load quests database:", err);
+      }
+    }
+
+    async function runQuery() {
+      const query = queryEditor.getValue();
+      const deployBtn = document.getElementById('btn-deploy');
+      const outputEl = document.getElementById('telemetry-output');
+      const uplinkVal = document.getElementById('uplink-status-value');
+      
+      deployBtn.disabled = true;
+      deployBtn.textContent = 'EXECUTING...';
+      uplinkVal.textContent = 'Sending...';
+      
+      const startTime = performance.now();
+      
+      try {
+        const res = await fetch('/graphql', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify({ query })
+        });
+        
+        const duration = (performance.now() - startTime).toFixed(0);
+        const data = await res.json();
+        
+        totalPackets++;
+        document.getElementById('packets-count').textContent = totalPackets;
+        
+        outputEl.textContent = JSON.stringify(data, null, 2);
+        outputEl.style.color = data.errors ? 'var(--accent-red-bright)' : '#9fadb5';
+        
+        document.getElementById('telemetry-status').textContent = `${res.status} ${res.statusText}`;
+        document.getElementById('telemetry-status').style.color = res.ok ? 'var(--accent-green-bright)' : 'var(--accent-red-bright)';
+        document.getElementById('telemetry-rtt').textContent = `${duration}ms`;
+        
+        const size = (JSON.stringify(data).length / 1024).toFixed(2);
+        document.getElementById('telemetry-size').textContent = `${size} KB`;
+        
+        uplinkVal.textContent = data.errors ? 'Errors Returned' : 'Success';
+        
+      } catch (err) {
+        const duration = (performance.now() - startTime).toFixed(0);
+        outputEl.textContent = JSON.stringify({ error: err.message }, null, 2);
+        outputEl.style.color = 'var(--accent-red-bright)';
+        document.getElementById('telemetry-status').textContent = 'Error';
+        document.getElementById('telemetry-status').style.color = 'var(--accent-red-bright)';
+        document.getElementById('telemetry-rtt').textContent = `${duration}ms`;
+        document.getElementById('telemetry-size').textContent = '0 KB';
+        uplinkVal.textContent = 'Connection Failed';
+      } finally {
+        deployBtn.disabled = false;
+        deployBtn.textContent = 'RUN QUERY';
+      }
+    }
+
+    function loadQueryPreset(presetKey) {
+      if (queryPresets[presetKey]) {
+        queryEditor.setValue(queryPresets[presetKey]);
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // TAB SWITCHING
+    // ----------------------------------------------------------------
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-tab') === tabId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      
+      document.querySelectorAll('.tab-pane').forEach(pane => {
+        if (pane.id === tabId) {
+          pane.classList.add('active');
+          if (tabId === 'console-tab' && queryEditor) {
+            setTimeout(() => queryEditor.refresh(), 10);
+          }
+        } else {
+          pane.classList.remove('active');
+        }
+      });
+    }
+
+    // ----------------------------------------------------------------
+    // TASK LOG SYSTEM
+    // ----------------------------------------------------------------
+    function populateQuestList(filtered = null) {
+      const container = document.getElementById('task-list-container');
+      container.innerHTML = '';
+      
+      const questsToRender = filtered || allQuests;
+      
+      if (questsToRender.length === 0) {
+        container.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 11px;">No tasks found</div>`;
+        return;
+      }
+      
+      questsToRender.forEach(q => {
+        const item = document.createElement('div');
+        item.className = `task-list-item ${selectedQuestId === q.id ? 'active' : ''}`;
+        item.onclick = () => selectQuest(q.id);
+        
+        const info = document.createElement('div');
+        info.style.overflow = 'hidden';
+        
+        const title = document.createElement('div');
+        title.className = 'task-item-title';
+        title.textContent = q.title;
+        
+        const traderName = tradersData[q.giver] ? tradersData[q.giver].name : `Trader ${q.giver}`;
+        const meta = document.createElement('div');
+        meta.className = 'task-item-trader';
+        meta.innerHTML = `ISSUED BY: <span style="color: var(--accent-yellow);">${traderName.toUpperCase()}</span>`;
+        
+        info.appendChild(title);
+        info.appendChild(meta);
+        
+        const status = document.createElement('div');
+        status.className = `task-item-status-dot`;
+        
+        item.appendChild(info);
+        item.appendChild(status);
+        
+        container.appendChild(item);
+      });
+    }
+
+    function selectQuest(questId) {
+      selectedQuestId = questId;
+      
+      document.querySelectorAll('.task-list-item').forEach((item, idx) => {
+        const renderedQuests = getFilteredQuests();
+        if (renderedQuests[idx] && renderedQuests[idx].id === questId) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+      
+      const quest = allQuests.find(q => q.id === questId);
+      if (!quest) return;
+      
+      const detailsContainer = document.getElementById('task-details-content');
+      const giverName = tradersData[quest.giver] ? tradersData[quest.giver].name : `Trader ${quest.giver}`;
+      const turninName = tradersData[quest.turnin] ? tradersData[quest.turnin].name : `Trader ${quest.turnin}`;
+      
+      let reqHtml = '';
+      if (quest.require) {
+        const minLvl = quest.require.level || 1;
+        const priorQuestsCount = quest.require.quests ? quest.require.quests.length : 0;
+        reqHtml = `Level ${minLvl}${priorQuestsCount > 0 ? ` (+${priorQuestsCount} tasks)` : ''}`;
+      } else {
+        reqHtml = 'None';
+      }
+      
+      let repsHtml = '';
+      if (quest.reputation && quest.reputation.length > 0) {
+        repsHtml = quest.reputation.map(r => {
+          const tName = tradersData[r.trader] ? tradersData[r.trader].name : `Trader ${r.trader}`;
+          const sign = r.rep >= 0 ? '+' : '';
+          const color = r.rep >= 0 ? 'var(--accent-green-bright)' : 'var(--accent-red-bright)';
+          return `<span style="color: ${color}; font-family: var(--font-mono);">${sign}${r.rep} ${tName}</span>`;
+        }).join(', ');
+      } else {
+        repsHtml = 'None';
+      }
+      
+      // Build Objectives
+      let objectivesHtml = '';
+      if (quest.objectives && quest.objectives.length > 0) {
+        objectivesHtml = quest.objectives.map((obj, index) => {
+          let gpsHtml = '';
+          if (obj.gps) {
+            gpsHtml = `
+              <table class="coords-table">
+                <thead>
+                  <tr>
+                    <th>Floor</th>
+                    <th>Coordinate X</th>
+                    <th>Coordinate Y</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>${obj.gps.floor || 'Ground Level'}</td>
+                    <td>${obj.gps.leftPercent}%</td>
+                    <td>${obj.gps.topPercent}%</td>
+                  </tr>
+                </tbody>
+              </table>
+            `;
+          }
+          
+          return `
+            <div class="objective-row">
+              <div style="flex: 1;">
+                <div class="objective-content">
+                  <div class="objective-checkbox"></div>
+                  <span class="objective-text">${obj.number > 1 ? `${obj.number}x ` : ''}${obj.target}</span>
+                </div>
+                ${gpsHtml}
+              </div>
+              <span class="objective-badge">${obj.type || 'action'}</span>
+            </div>
+          `;
+        }).join('');
+      } else {
+        objectivesHtml = `<div style="color: var(--text-muted); font-style: italic;">No objectives listed.</div>`;
+      }
+
+      detailsContainer.innerHTML = `
+        <div class="task-details-header">
+          <div class="task-title-group">
+            <span class="task-category-tag">Operations Dossier</span>
+            <h1 class="task-dossier-title">${quest.title.toUpperCase()}</h1>
+          </div>
+          <button class="btn-tarkov" onclick="window.open('${quest.wiki || 'https://escapefromtarkov.fandom.com/wiki/Quests'}', '_blank')">Wiki Intel</button>
+        </div>
+        
+        <div class="task-meta-table">
+          <div class="meta-item"><span class="meta-label">Issued By</span><span class="meta-value highlight">${giverName}</span></div>
+          <div class="meta-item"><span class="meta-label">Turn in To</span><span class="meta-value">${turninName}</span></div>
+          <div class="meta-item"><span class="meta-label">Prerequisites</span><span class="meta-value">${reqHtml}</span></div>
+          <div class="meta-item"><span class="meta-label">Database ID</span><span class="meta-value" style="font-family: var(--font-mono); font-size: 9.5px;">${quest.gameId || 'N/A'}</span></div>
+        </div>
+
+        <div>
+          <h2 class="task-section-title">Rewards</h2>
+          <div class="rewards-grid">
+            <div class="reward-box">
+              <span class="reward-val">+${quest.exp ? quest.exp.toLocaleString() : 0}</span>
+              <span class="reward-label">Experience</span>
+            </div>
+            <div class="reward-box" style="flex: 1;">
+              <span class="reward-val" style="font-size: 11.5px; color: var(--text-standard); font-weight: normal; font-family: var(--font-ui);">${repsHtml}</span>
+              <span class="reward-label">Standing Shift</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h2 class="task-section-title">Objectives</h2>
+          <div class="objectives-list">
+            ${objectivesHtml}
+          </div>
+        </div>
+        
+        <div style="margin-top: auto; border-top: 1px solid var(--border-color); padding-top: 15px; display: flex; gap: 8px;">
+          <button class="btn-tarkov" style="font-size: 11px;" onclick="generateSingleQuestQuery(${quest.id})">Inject Query for this task</button>
+        </div>
+      `;
+    }
+
+    function getFilteredQuests() {
+      const search = document.getElementById('task-search').value.toLowerCase();
+      const trader = document.getElementById('trader-filter-select').value;
+      
+      return allQuests.filter(q => {
+        const matchesSearch = q.title.toLowerCase().includes(search) || 
+                              q.objectives.some(o => o.target.toLowerCase().includes(search));
+        const matchesTrader = trader === 'all' || String(q.giver) === trader;
+        return matchesSearch && matchesTrader;
+      });
+    }
+
+    function filterQuests() {
+      const filtered = getFilteredQuests();
+      populateQuestList(filtered);
+    }
+
+    function setQuestTraderFilter(traderId) {
+      document.getElementById('trader-filter-select').value = traderId;
+      filterQuests();
+    }
+
+    function generateSingleQuestQuery(questId) {
+      const query = `query FetchQuestDetails {
+  quest(id: ${questId}) {
+    id
+    title
+    exp
+    giver
+    turnin
+    wiki
+    objectives {
+      type
+      target
+      number
+      gps {
+        leftPercent
+        topPercent
+        floor
+      }
+    }
+  }
+}`;
+      queryEditor.setValue(query);
+      switchTab('console-tab');
+    }
+
+    // ----------------------------------------------------------------
+    // TRADERS SYSTEM
+    // ----------------------------------------------------------------
+    function populateTradersTab() {
+      const container = document.getElementById('traders-container');
+      container.innerHTML = '';
+      
+      Object.keys(tradersData).forEach(id => {
+        const trader = tradersData[id];
+        const questCount = allQuests.filter(q => String(q.giver) === id).length;
+        
+        const card = document.createElement('div');
+        card.className = 'trader-card';
+        card.onclick = () => viewTraderQuests(id);
+        
+        card.innerHTML = `
+          <div class="trader-card-header">
+            <h3 class="trader-name">${trader.name.toUpperCase()}</h3>
+            <div class="trader-role">${trader.specialty}</div>
+          </div>
+          <p class="trader-description">${trader.description}</p>
+          <div class="trader-stats">
+            <div>LOCATION: <span>${trader.location.toUpperCase()}</span></div>
+            <div>TASKS: <span style="color: var(--accent-yellow); font-weight: bold;">${questCount}</span></div>
+          </div>
+        `;
+        
+        container.appendChild(card);
+      });
+    }
+
+    function viewTraderQuests(traderId) {
+      setQuestTraderFilter(traderId);
+      const traderQuests = allQuests.filter(q => String(q.giver) === traderId);
+      if (traderQuests.length > 0) {
+        selectQuest(traderQuests[0].id);
+      }
+      switchTab('tasks-tab');
+    }
+
+    // ----------------------------------------------------------------
+    // SCHEMA REFERENCE SYSTEM
+    // ----------------------------------------------------------------
+    function showSchemaType(typeName) {
+      document.querySelectorAll('.schema-nav-item').forEach(item => {
+        if (item.textContent.includes(typeName)) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+      
+      const doc = schemaDocs[typeName];
+      const contentEl = document.getElementById('schema-details-content');
+      if (!doc) return;
+      
+      let fieldsHtml = '';
+      if (doc.fields && doc.fields.length > 0) {
+        fieldsHtml = doc.fields.map(f => `
+          <tr>
+            <td class="field-name">${f.name}</td>
+            <td class="field-type">${f.type}</td>
+            <td class="field-desc">${f.desc}</td>
+          </tr>
+        `).join('');
+      }
+      
+      contentEl.innerHTML = `
+        <div class="schema-details-title">
+          ${typeName.toUpperCase()}
+          <span class="schema-details-subtitle">Schema Type</span>
+        </div>
+        <div class="schema-description">${doc.description}</div>
+        
+        <h3 style="font-family: var(--font-header); font-size: 14px; letter-spacing: 0.5px; color: var(--text-bright); margin-bottom: 8px;">Fields</h3>
+        <table class="schema-table">
+          <thead>
+            <tr>
+              <th style="width: 25%;">Field</th>
+              <th style="width: 25%;">Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${fieldsHtml}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 20px; display: flex; gap: 8px; align-items: center;">
+          <button class="btn-tarkov" style="font-size: 11px;" onclick="loadPresetForType('${typeName}')">Load template in console</button>
+        </div>
+      `;
+    }
+
+    function loadPresetForType(typeName) {
+      if (typeName === 'Query' || typeName === 'Quest') {
+        loadQueryPreset('allQuests');
+      } else if (typeName === 'GPS') {
+        queryEditor.setValue(`query FetchGPSPositions {
+  quests {
+    title
+    objectives {
+      target
+      gps {
+        leftPercent
+        topPercent
+        floor
+      }
+    }
+  }
+}`);
+      } else if (typeName === 'Reputation') {
+        queryEditor.setValue(`query FetchReputations {
+  quests {
+    title
+    reputation {
+      trader
+      rep
+    }
+  }
+}`);
+      } else {
+        queryEditor.setValue(`query FetchQuestDetails {
+  quests {
+    id
+    title
+    objectives {
+      type
+      target
+    }
+  }
+}`);
+      }
+      switchTab('console-tab');
+    }
+  </script>
+</body>
+</html>

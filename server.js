@@ -5,6 +5,8 @@ const cors = require('cors');
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
+const { tarkovLandingPagePlugin } = require('./tarkovLandingPage');
+
 
 // ---------------------
 // Data loading
@@ -108,6 +110,7 @@ async function startServer() {
     resolvers,
     // Enable the embedded Apollo Sandbox (playground) in all environments
     introspection: true,
+    plugins: [tarkovLandingPagePlugin],
   });
 
   await server.start();
@@ -130,7 +133,7 @@ async function startServer() {
     res.redirect('/graphql');
   });
 
-  const PORT = process.env.PORT || 3001;
+  const PORT = process.env.PORT || 3000;
   httpServer.listen(PORT, () => {
     console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
     console.log(`❤️  Health check at http://localhost:${PORT}/health`);
