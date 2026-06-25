@@ -1,0 +1,25 @@
+{
+  "name": "tarkovlab-api",
+  "version": "1.0.0",
+  "description": "## License This project is under MIT License. See [LICENSE](LICENSE) for more informations.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TarkovLab/Tarkovlab-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TarkovLab/Tarkovlab-api/issues"
+  },
+  "homepage": "https://github.com/TarkovLab/Tarkovlab-api#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}
