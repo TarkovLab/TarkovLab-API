@@ -19,7 +19,49 @@ async function loadQuests() {
     return cachedQuests;
   }
 
-  // Try 1: Sibling TarkovData repository (local development)
+  // Try 1: Remote data server data.tarkovlab.org
+  try {
+    console.log('Fetching quests from remote data server https://data.tarkovlab.org/quests.json ...');
+    const response = await fetch('https://data.tarkovlab.org/quests.json');
+    if (response.ok) {
+      const text = await response.text();
+      cachedQuests = JSON.parse(text);
+      console.log('Successfully loaded quests from data.tarkovlab.org.');
+      
+      // Save/Cache locally as backup
+      try {
+        const apiLocalPath = path.join(__dirname, 'data', 'quests.json');
+        const apiLocalDir = path.dirname(apiLocalPath);
+        if (!fs.existsSync(apiLocalDir)) {
+          fs.mkdirSync(apiLocalDir, { recursive: true });
+        }
+        fs.writeFileSync(apiLocalPath, text, 'utf8');
+      } catch (writeErr) {
+        console.warn('Could not cache remote quests locally:', writeErr.message);
+      }
+      
+      return cachedQuests;
+    } else {
+      console.warn(`Failed to fetch from data.tarkovlab.org: HTTP ${response.status}`);
+    }
+  } catch (e) {
+    console.warn('Could not fetch from data.tarkovlab.org:', e.message);
+  }
+
+  // Try 2: Local backup cache
+  try {
+    const apiLocalPath = path.join(__dirname, 'data', 'quests.json');
+    if (fs.existsSync(apiLocalPath)) {
+      const raw = fs.readFileSync(apiLocalPath, 'utf8');
+      cachedQuests = JSON.parse(raw);
+      console.log('Successfully loaded quests from local cache backup.');
+      return cachedQuests;
+    }
+  } catch (e) {
+    console.warn('Could not load quests from local cache backup:', e.message);
+  }
+
+  // Try 3: Sibling TarkovData repository (local development fallback)
   try {
     const localPath = path.join(dataDir, 'quests.json');
     if (fs.existsSync(localPath)) {
@@ -32,22 +74,9 @@ async function loadQuests() {
     console.warn('Could not load quests from local TarkovData:', e.message);
   }
 
-  // Try 2: Local cached copy in the API directory
-  const apiLocalPath = path.join(__dirname, 'data', 'quests.json');
+  // Try 4: GitHub backup fallback
   try {
-    if (fs.existsSync(apiLocalPath)) {
-      const raw = fs.readFileSync(apiLocalPath, 'utf8');
-      cachedQuests = JSON.parse(raw);
-      console.log('Successfully loaded quests from API local cache.');
-      return cachedQuests;
-    }
-  } catch (e) {
-    console.warn('Could not load quests from API local cache:', e.message);
-  }
-
-  // Try 3: Fetch from remote GitHub repository
-  try {
-    console.log('Fetching quests from GitHub repository...');
+    console.log('Fetching quests from GitHub repository backup...');
     const url = 'https://raw.githubusercontent.com/TarkovLab/TarkovData/master/data/quests.json';
     const response = await fetch(url);
     if (!response.ok) {
@@ -55,19 +84,6 @@ async function loadQuests() {
     }
     const text = await response.text();
     cachedQuests = JSON.parse(text);
-
-    // Cache the fetched data locally
-    try {
-      const apiLocalDir = path.dirname(apiLocalPath);
-      if (!fs.existsSync(apiLocalDir)) {
-        fs.mkdirSync(apiLocalDir, { recursive: true });
-      }
-      fs.writeFileSync(apiLocalPath, text, 'utf8');
-      console.log('Successfully cached fetched quests locally to', apiLocalPath);
-    } catch (writeErr) {
-      console.warn('Could not cache fetched quests locally:', writeErr.message);
-    }
-
     return cachedQuests;
   } catch (e) {
     console.error('Failed to load quests from all sources:', e.message);
