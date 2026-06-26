@@ -9,15 +9,71 @@ const { tarkovLandingPagePlugin } = require('./tarkovLandingPage');
 
 
 // ---------------------
-// Data loading
+// Data loading (with robust local -> cache -> GitHub fetch fallback)
 // ---------------------
 const dataDir = path.join(__dirname, '..', 'TarkovData', 'data');
+let cachedQuests = null;
 
-const loadQuests = () => {
-  const filePath = path.join(dataDir, 'quests.json');
-  const raw = fs.readFileSync(filePath, 'utf8');
-  return JSON.parse(raw);
-};
+async function loadQuests() {
+  if (cachedQuests) {
+    return cachedQuests;
+  }
+
+  // Try 1: Sibling TarkovData repository (local development)
+  try {
+    const localPath = path.join(dataDir, 'quests.json');
+    if (fs.existsSync(localPath)) {
+      const raw = fs.readFileSync(localPath, 'utf8');
+      cachedQuests = JSON.parse(raw);
+      console.log('Successfully loaded quests from local TarkovData sibling directory.');
+      return cachedQuests;
+    }
+  } catch (e) {
+    console.warn('Could not load quests from local TarkovData:', e.message);
+  }
+
+  // Try 2: Local cached copy in the API directory
+  const apiLocalPath = path.join(__dirname, 'data', 'quests.json');
+  try {
+    if (fs.existsSync(apiLocalPath)) {
+      const raw = fs.readFileSync(apiLocalPath, 'utf8');
+      cachedQuests = JSON.parse(raw);
+      console.log('Successfully loaded quests from API local cache.');
+      return cachedQuests;
+    }
+  } catch (e) {
+    console.warn('Could not load quests from API local cache:', e.message);
+  }
+
+  // Try 3: Fetch from remote GitHub repository
+  try {
+    console.log('Fetching quests from GitHub repository...');
+    const url = 'https://raw.githubusercontent.com/TarkovLab/TarkovData/master/data/quests.json';
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const text = await response.text();
+    cachedQuests = JSON.parse(text);
+
+    // Cache the fetched data locally
+    try {
+      const apiLocalDir = path.dirname(apiLocalPath);
+      if (!fs.existsSync(apiLocalDir)) {
+        fs.mkdirSync(apiLocalDir, { recursive: true });
+      }
+      fs.writeFileSync(apiLocalPath, text, 'utf8');
+      console.log('Successfully cached fetched quests locally to', apiLocalPath);
+    } catch (writeErr) {
+      console.warn('Could not cache fetched quests locally:', writeErr.message);
+    }
+
+    return cachedQuests;
+  } catch (e) {
+    console.error('Failed to load quests from all sources:', e.message);
+    throw e;
+  }
+}
 
 // ---------------------
 // GraphQL Schema
@@ -85,14 +141,22 @@ const typeDefs = `#graphql
 // Resolvers
 // ---------------------
 const resolvers = {
+  Objective: {
+    target: (parent) => {
+      if (Array.isArray(parent.target)) {
+        return JSON.stringify(parent.target);
+      }
+      return parent.target !== undefined && parent.target !== null ? String(parent.target) : null;
+    },
+  },
   Query: {
-    quests: () => loadQuests(),
-    quest: (_, { id }) => {
-      const quests = loadQuests();
+    quests: async () => await loadQuests(),
+    quest: async (_, { id }) => {
+      const quests = await loadQuests();
       return quests.find((q) => q.id === id) || null;
     },
-    questsByTrader: (_, { trader }) => {
-      const quests = loadQuests();
+    questsByTrader: async (_, { trader }) => {
+      const quests = await loadQuests();
       return quests.filter((q) => q.giver === trader);
     },
   },

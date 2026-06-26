@@ -208,6 +208,7 @@
       display: flex;
       flex-direction: column;
       position: relative;
+      overflow: hidden;
     }
 
     .panel-header {
@@ -444,6 +445,7 @@
       position: relative;
       overflow: auto;
       background-color: var(--bg-input);
+      min-height: 0;
     }
 
     .output-pre {
@@ -500,6 +502,7 @@
     .task-list {
       flex: 1;
       overflow-y: auto;
+      min-height: 0;
     }
 
     .task-list-item {
@@ -557,6 +560,7 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
+      min-height: 0;
     }
 
     .task-details-header {
@@ -874,6 +878,8 @@
     }
 
     .schema-details {
+      flex: 1;
+      min-height: 0;
       padding: 20px;
       overflow-y: auto;
     }
@@ -957,7 +963,6 @@
     <nav class="tabs-container">
       <button class="tab-btn active" data-tab="console-tab" onclick="switchTab('console-tab')">CONSOLE</button>
       <button class="tab-btn" data-tab="tasks-tab" onclick="switchTab('tasks-tab')">TASK LOG</button>
-      <button class="tab-btn" data-tab="traders-tab" onclick="switchTab('traders-tab')">TRADERS</button>
       <button class="tab-btn" data-tab="schema-tab" onclick="switchTab('schema-tab')">API REFERENCE</button>
     </nav>
 
@@ -1075,14 +1080,7 @@
       </div>
     </div>
 
-    <!-- --------------------------------------------------------
-         TAB 3: TRADERS
-         -------------------------------------------------------- -->
-    <div id="traders-tab" class="tab-pane">
-      <div id="traders-container" class="traders-grid">
-        <!-- Dynamically populated -->
-      </div>
-    </div>
+
 
     <!-- --------------------------------------------------------
          TAB 4: API REFERENCE (SCHEMA)
@@ -1341,7 +1339,6 @@
       await fetchAllQuestsFromServer();
       
       populateQuestList();
-      populateTradersTab();
       showSchemaType('Query');
     });
 
@@ -1727,45 +1724,7 @@
       switchTab('console-tab');
     }
 
-    // ----------------------------------------------------------------
-    // TRADERS SYSTEM
-    // ----------------------------------------------------------------
-    function populateTradersTab() {
-      const container = document.getElementById('traders-container');
-      container.innerHTML = '';
-      
-      Object.keys(tradersData).forEach(id => {
-        const trader = tradersData[id];
-        const questCount = allQuests.filter(q => String(q.giver) === id).length;
-        
-        const card = document.createElement('div');
-        card.className = 'trader-card';
-        card.onclick = () => viewTraderQuests(id);
-        
-        card.innerHTML = `
-          <div class="trader-card-header">
-            <h3 class="trader-name">${trader.name.toUpperCase()}</h3>
-            <div class="trader-role">${trader.specialty}</div>
-          </div>
-          <p class="trader-description">${trader.description}</p>
-          <div class="trader-stats">
-            <div>LOCATION: <span>${trader.location.toUpperCase()}</span></div>
-            <div>TASKS: <span style="color: var(--accent-yellow); font-weight: bold;">${questCount}</span></div>
-          </div>
-        `;
-        
-        container.appendChild(card);
-      });
-    }
 
-    function viewTraderQuests(traderId) {
-      setQuestTraderFilter(traderId);
-      const traderQuests = allQuests.filter(q => String(q.giver) === traderId);
-      if (traderQuests.length > 0) {
-        selectQuest(traderQuests[0].id);
-      }
-      switchTab('tasks-tab');
-    }
 
     // ----------------------------------------------------------------
     // SCHEMA REFERENCE SYSTEM
