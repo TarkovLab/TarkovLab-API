@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TarkovLab - API Terminal</title>
-  <link rel="icon" type="image/png" href="https://logo.tarkovlab.org/tl-icon">
-  
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%23c0a050' stroke-width='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='9' stroke='%23c0a050' stroke-width='2'/%3E%3Cline x1='16' y1='23' x2='16' y2='30' stroke='%23c0a050' stroke-width='2'/%3E%3Cline x1='2' y1='16' x2='9' y2='16' stroke='%23c0a050' stroke-width='2'/%3E%3Cline x1='23' y1='16' x2='30' y2='16' stroke='%23c0a050' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23c0a050'/%3E%3C/svg%3E">
+
   <!-- Google Fonts: Oswald for headers, Rajdhani for UI text (matches TarkovLab main site) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Fira+Mono&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@400;500;600;700&family=Fira+Mono&display=swap"
+    rel="stylesheet">
+
   <!-- CodeMirror CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
-  
+
   <style>
     /* ----------------------------------------------------------------
        TARKOV SOBER DESIGN SYSTEM
@@ -25,31 +29,60 @@
       --bg-header: #0a0a0a;
       --bg-input: #060606;
       --hover: #232220;
-      
+
       /* Borders */
       --border-color: #2a2825;
       --border-highlight: #3a3733;
-      
+
       /* Text Colors */
       --text-bright: #c8c3b6;
       --text-standard: #8a8578;
       --text-muted: #5a564d;
-      
+
       /* Accent Colors */
       --accent-yellow: #c0a050;
       --accent-yellow-hover: #d8bc72;
       --accent-yellow-dim: #9a8c5f;
-      
+
       --accent-green: #3d4a3a;
       --accent-green-bright: #6fae6f;
-      
+
       --accent-red: #6b3a2e;
       --accent-red-bright: #c0903a;
-      
+
       /* Fonts */
       --font-header: 'Oswald', sans-serif;
       --font-ui: 'Rajdhani', sans-serif;
       --font-mono: 'Fira Mono', monospace;
+    }
+
+    body.theme-light {
+      --bg-main: #f2f0eb;
+      --bg-panel: #ffffff;
+      --bg-header: #ffffff;
+      --bg-input: #fbfaf7;
+      --hover: #ece8e0;
+
+      --border-color: #ddd7cb;
+      --border-highlight: #c7bfae;
+
+      --text-bright: #211f1a;
+      --text-standard: #4c473c;
+      --text-muted: #8b8474;
+
+      --accent-yellow: #9c7a2e;
+      --accent-yellow-hover: #7f6425;
+      --accent-yellow-dim: #b79a52;
+
+      --accent-green: #d7ead2;
+      --accent-green-bright: #2f7d3a;
+
+      --accent-red: #f0dcd3;
+      --accent-red-bright: #a35a20;
+    }
+
+    body.theme-light .CodeMirror-selected {
+      background: rgba(0, 0, 0, 0.05) !important;
     }
 
     * {
@@ -105,6 +138,12 @@
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--text-bright);
+    }
+
+    .logo-img {
+      height: 30px;
+      width: auto;
+      display: block;
     }
 
     .logo-tag {
@@ -178,6 +217,221 @@
       color: var(--text-standard);
     }
 
+    .header-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: var(--text-standard);
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      color: var(--accent-yellow);
+      border-color: var(--border-highlight);
+      background-color: var(--hover);
+    }
+
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .icon-btn.spinning svg {
+      animation: spin-icon 0.7s linear infinite;
+    }
+
+    @keyframes spin-icon {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .dropdown-panel {
+      position: absolute;
+      top: 46px;
+      right: 0;
+      width: 240px;
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      z-index: 50;
+      padding: 16px;
+    }
+
+    .dropdown-panel-title {
+      font-family: var(--font-header);
+      font-weight: 500;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-yellow);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .settings-label {
+      font-family: var(--font-ui);
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--text-standard);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .theme-toggle {
+      display: flex;
+      border: 1px solid var(--border-highlight);
+    }
+
+    .theme-btn {
+      font-family: var(--font-ui);
+      font-weight: 600;
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 7px 12px;
+      cursor: pointer;
+    }
+
+    .theme-btn:hover {
+      color: var(--text-bright);
+    }
+
+    .theme-btn.active {
+      background-color: var(--accent-yellow);
+      color: #0a0a0a;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .modal-box {
+      width: 640px;
+      max-width: 90vw;
+      max-height: 80vh;
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      font-family: var(--font-header);
+      font-weight: 500;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent-yellow);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 8px;
+    }
+
+    .modal-close:hover {
+      color: var(--accent-yellow);
+    }
+
+    .modal-body {
+      overflow-y: auto;
+      padding: 8px 20px 20px;
+    }
+
+    .command-card {
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 0;
+    }
+
+    .command-card:last-child {
+      border-bottom: none;
+    }
+
+    .command-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .command-card-title {
+      font-family: var(--font-header);
+      font-weight: 500;
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+      color: var(--text-bright);
+    }
+
+    .command-card-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .command-card-code {
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-green-bright);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
     /* Main Container */
     .main-content {
       flex: 1;
@@ -219,6 +473,39 @@
 
     .footer span {
       color: var(--text-standard);
+    }
+
+    .footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s ease;
+    }
+
+    .footer a:hover {
+      color: var(--accent-yellow);
+    }
+
+    .footer-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green-bright);
+      flex-shrink: 0;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+
+    .footer-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
     }
 
     /* ----------------------------------------------------------------
@@ -331,12 +618,15 @@
       width: 4px;
       height: 4px;
     }
+
     ::-webkit-scrollbar-track {
       background: var(--bg-main);
     }
+
     ::-webkit-scrollbar-thumb {
       background: var(--border-color);
     }
+
     ::-webkit-scrollbar-thumb:hover {
       background: var(--accent-yellow);
     }
@@ -346,10 +636,111 @@
        ---------------------------------------------------------------- */
     .console-layout {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 260px 1fr 1fr;
       gap: 22px;
       width: 100%;
       height: 100%;
+    }
+
+    .explorer-section {
+      height: 100%;
+    }
+
+    .explorer-controls {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .explorer-controls select,
+    .explorer-controls input {
+      width: 100%;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-highlight);
+      color: var(--text-bright);
+      padding: 7px 10px;
+      font-family: var(--font-ui);
+      font-weight: 500;
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    .explorer-controls select:focus,
+    .explorer-controls input:focus {
+      border-color: var(--accent-yellow);
+    }
+
+    .explorer-tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 14px;
+      min-height: 0;
+    }
+
+    .explorer-tree label {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+
+    .explorer-tree input[type="checkbox"] {
+      accent-color: var(--accent-yellow);
+      cursor: pointer;
+    }
+
+    .explorer-field-name {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--text-bright);
+    }
+
+    .explorer-field-type {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      color: var(--accent-green-bright);
+      opacity: 0.75;
+    }
+
+    .explorer-node summary {
+      list-style: none;
+      cursor: pointer;
+    }
+
+    .explorer-node summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .explorer-node>summary::before {
+      content: '▸';
+      display: inline-block;
+      width: 12px;
+      color: var(--text-muted);
+      font-size: 9px;
+    }
+
+    .explorer-node[open]>summary::before {
+      content: '▾';
+    }
+
+    .explorer-children {
+      margin-left: 18px;
+      border-left: 1px solid var(--border-color);
+      padding-left: 8px;
+    }
+
+    .explorer-leaf {
+      margin-left: 18px;
+    }
+
+    .explorer-actions {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-color);
     }
 
     .editor-section {
@@ -424,25 +815,49 @@
       font-family: var(--font-mono) !important;
       font-size: 12.5px !important;
     }
+
     .CodeMirror-gutters {
       background-color: var(--bg-panel) !important;
       border-right: 1px solid var(--border-color) !important;
     }
+
     .CodeMirror-linenumber {
       color: var(--text-muted) !important;
     }
+
     .CodeMirror-cursor {
       border-left: 1.5px solid var(--accent-yellow) !important;
     }
-    
+
     /* Plain flat editor colors */
-    .cm-keyword { color: var(--accent-yellow) !important; font-weight: 500; }
-    .cm-string { color: var(--accent-green-bright) !important; }
-    .cm-number { color: #7fa4c2 !important; }
-    .cm-property { color: var(--text-bright) !important; }
-    .cm-def { color: var(--text-bright) !important; }
-    .cm-comment { color: var(--text-muted) !important; }
-    .CodeMirror-selected { background: rgba(255, 255, 255, 0.05) !important; }
+    .cm-keyword {
+      color: var(--accent-yellow) !important;
+      font-weight: 500;
+    }
+
+    .cm-string {
+      color: var(--accent-green-bright) !important;
+    }
+
+    .cm-number {
+      color: #7fa4c2 !important;
+    }
+
+    .cm-property {
+      color: var(--text-bright) !important;
+    }
+
+    .cm-def {
+      color: var(--text-bright) !important;
+    }
+
+    .cm-comment {
+      color: var(--text-muted) !important;
+    }
+
+    .CodeMirror-selected {
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
 
     /* Output Section */
     .output-section {
@@ -525,7 +940,9 @@
       outline: none;
     }
 
-    .search-input::placeholder { color: var(--text-muted); }
+    .search-input::placeholder {
+      color: var(--text-muted);
+    }
 
     .search-input:focus {
       border-color: var(--accent-yellow);
@@ -773,7 +1190,8 @@
       font-size: 10px;
     }
 
-    .coords-table th, .coords-table td {
+    .coords-table th,
+    .coords-table td {
       border-bottom: 1px solid var(--border-color);
       padding: 5px 8px;
       text-align: left;
@@ -973,7 +1391,8 @@
       margin-top: 10px;
     }
 
-    .schema-table th, .schema-table td {
+    .schema-table th,
+    .schema-table td {
       border-bottom: 1px solid var(--border-color);
       padding: 11px 14px;
       text-align: left;
@@ -1006,16 +1425,18 @@
       font-size: 0.85rem;
     }
 
-    .d-none { display: none !important; }
+    .d-none {
+      display: none !important;
+    }
   </style>
 </head>
+
 <body>
 
   <!-- Header -->
   <header class="header">
     <div class="logo-container">
-      <div class="logo-accent"></div>
-      <span class="logo-text">TarkovLab</span>
+      <img class="logo-img" src="https://logo.tarkovlab.org/tl-icon" alt="TarkovLab">
       <span class="logo-tag">API TERMINAL</span>
     </div>
 
@@ -1025,10 +1446,42 @@
       <button class="tab-btn" data-tab="schema-tab" onclick="switchTab('schema-tab')">API REFERENCE</button>
     </nav>
 
-    <div class="system-info">
-      <div>SYS: <span>ONLINE</span></div>
-      <div>SECURE: <span>YES</span></div>
-      <div>TIME: <span id="clock">00:00:00</span></div>
+    <div class="header-actions">
+      <button id="refresh-btn" class="icon-btn" title="Refresh data" onclick="refreshData()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
+      <button id="commands-btn" class="icon-btn" title="Quick commands" onclick="toggleCommandsModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <polyline points="4 17 10 11 4 5"></polyline>
+          <line x1="12" y1="19" x2="20" y2="19"></line>
+        </svg>
+      </button>
+      <button id="settings-btn" class="icon-btn" title="Settings" onclick="toggleSettingsPanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path
+            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+          </path>
+        </svg>
+      </button>
+
+      <div id="settings-panel" class="dropdown-panel d-none">
+        <div class="dropdown-panel-title">Display Settings</div>
+        <div class="settings-row">
+          <span class="settings-label">Theme</span>
+          <div class="theme-toggle">
+            <button id="theme-btn-dark" class="theme-btn active" onclick="setTheme('dark')">Dark</button>
+            <button id="theme-btn-light" class="theme-btn" onclick="setTheme('light')">Light</button>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -1040,14 +1493,49 @@
          -------------------------------------------------------- -->
     <div id="console-tab" class="tab-pane active">
       <div class="console-layout">
-        
+
+        <!-- Explorer Panel -->
+        <div class="panel explorer-section">
+          <div class="panel-header">
+            <span class="panel-title">Explorer</span>
+            <span class="panel-header-desc">Build Query</span>
+          </div>
+
+          <div class="explorer-controls">
+            <select id="explorer-operation" onchange="onExplorerOperationChange()">
+              <option value="quests">quests — All Quests</option>
+              <option value="quest">quest(id) — Single Quest</option>
+              <option value="questsByTrader">questsByTrader — By Trader</option>
+            </select>
+            <input id="explorer-id-input" type="number" min="1" value="1" placeholder="Quest ID" class="d-none">
+            <select id="explorer-trader-input" class="d-none">
+              <option value="0">Prapor</option>
+              <option value="1">Therapist</option>
+              <option value="2">Skier</option>
+              <option value="3">Peacekeeper</option>
+              <option value="4">Mechanic</option>
+              <option value="5">Ragman</option>
+              <option value="6">Jaeger</option>
+              <option value="7">Fence</option>
+            </select>
+          </div>
+
+          <div id="explorer-tree" class="explorer-tree"></div>
+
+          <div class="explorer-actions">
+            <button class="btn-tarkov" onclick="clearExplorerSelection()">Clear</button>
+            <button class="btn-tarkov-primary" style="flex: 1; padding: 8px 14px; font-size: 0.82rem;"
+              onclick="generateExplorerQuery()">Insert Query</button>
+          </div>
+        </div>
+
         <!-- Editor Panel -->
         <div class="panel editor-section">
           <div class="panel-header">
             <span class="panel-title">GraphQL Editor</span>
             <span class="panel-header-desc">Input Query</span>
           </div>
-          
+
           <div class="presets-bar">
             <span class="presets-label">Presets:</span>
             <button class="btn-tarkov" onclick="loadQueryPreset('allQuests')">All Quests</button>
@@ -1082,7 +1570,8 @@
             <div class="output-info-item">SIZE: <span id="telemetry-size">N/A</span></div>
           </div>
           <div class="output-container">
-            <pre class="output-pre"><code id="telemetry-output">// Enter query and execute to view API output.</code></pre>
+            <pre
+              class="output-pre"><code id="telemetry-output">// Enter query and execute to view API output.</code></pre>
           </div>
         </div>
 
@@ -1094,17 +1583,19 @@
          -------------------------------------------------------- -->
     <div id="tasks-tab" class="tab-pane">
       <div class="task-log-layout">
-        
+
         <!-- Sidebar: Tasks List -->
         <div class="panel task-sidebar">
           <div class="panel-header">
             <span class="panel-title">Tasks</span>
             <span class="panel-header-desc">Active ledger</span>
           </div>
-          
+
           <div class="task-filter-box">
-            <input id="task-search" type="text" class="search-input" placeholder="Filter by name or target..." oninput="filterQuests()">
-            <select id="trader-filter-select" class="search-input" style="font-size: 11px; padding: 4px;" onchange="filterQuests()">
+            <input id="task-search" type="text" class="search-input" placeholder="Filter by name or target..."
+              oninput="filterQuests()">
+            <select id="trader-filter-select" class="search-input" style="font-size: 11px; padding: 4px;"
+              onchange="filterQuests()">
               <option value="all">Filter by Trader...</option>
               <option value="0">Prapor</option>
               <option value="1">Therapist</option>
@@ -1130,8 +1621,10 @@
           </div>
           <div id="task-details-content" class="task-details-container">
             <div class="no-task-selected">
-              <div style="font-family: var(--font-header); font-size: 20px; color: var(--text-standard);">Select a Task</div>
-              <div style="font-size: 12px; max-width: 260px; color: var(--text-muted);">Select a task from the list to view its description, requirements, rewards, and coordinates.</div>
+              <div style="font-family: var(--font-header); font-size: 20px; color: var(--text-standard);">Select a Task
+              </div>
+              <div style="font-size: 12px; max-width: 260px; color: var(--text-muted);">Select a task from the list to
+                view its description, requirements, rewards, and coordinates.</div>
             </div>
           </div>
         </div>
@@ -1146,7 +1639,7 @@
          -------------------------------------------------------- -->
     <div id="schema-tab" class="tab-pane">
       <div class="schema-layout">
-        
+
         <!-- Sidebar: Types -->
         <div class="panel schema-sidebar">
           <div class="panel-header">
@@ -1154,13 +1647,20 @@
             <span class="panel-header-desc">Schema Objects</span>
           </div>
           <div class="schema-nav-list">
-            <div class="schema-nav-item active" onclick="showSchemaType('Query')">Query <span class="schema-nav-badge">Query</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('Quest')">Quest <span class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('Objective')">Objective <span class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('GPS')">GPS <span class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('Reputation')">Reputation <span class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('QuestRequirement')">QuestRequirement <span class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('Locales')">Locales <span class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item active" onclick="showSchemaType('Query')">Query <span
+                class="schema-nav-badge">Query</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('Quest')">Quest <span
+                class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('Objective')">Objective <span
+                class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('GPS')">GPS <span class="schema-nav-badge">Type</span>
+            </div>
+            <div class="schema-nav-item" onclick="showSchemaType('Reputation')">Reputation <span
+                class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('QuestRequirement')">QuestRequirement <span
+                class="schema-nav-badge">Type</span></div>
+            <div class="schema-nav-item" onclick="showSchemaType('Locales')">Locales <span
+                class="schema-nav-badge">Type</span></div>
           </div>
         </div>
 
@@ -1180,10 +1680,30 @@
 
   </main>
 
+  <!-- Quick Commands Modal -->
+  <div id="commands-modal-overlay" class="modal-overlay d-none" onclick="closeCommandsModalOnOverlay(event)">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">Quick Commands</span>
+        <button class="modal-close" onclick="toggleCommandsModal()">✕</button>
+      </div>
+      <div id="commands-modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="footer">
-    <div>COORDINATES: <span>55.7558° N, 37.6173° E</span></div>
-    <div>ACTIVE UPLINK SESSION</div>
+    <div class="footer-left">
+      <a href="https://status.tarkovlab.org/" target="_blank" rel="noopener">
+        STATUS
+      </a>
+      <a href="https://github.com/tarkovlab" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg class="footer-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+        </svg>
+      </a>
+    </div>
     <div>PACKETS: <span id="packets-count">0</span> RECEIVED</div>
   </footer>
 
@@ -1197,7 +1717,7 @@
     let selectedQuestId = null;
     let queryEditor = null;
     let totalPackets = 0;
-    
+
     // Trader details mapper
     const tradersData = {
       0: {
@@ -1391,12 +1911,14 @@
     // APP LIFECYCLE
     // ----------------------------------------------------------------
     window.addEventListener('DOMContentLoaded', async () => {
-      startClock();
       initEditor();
       queryEditor.setValue(queryPresets.allQuests);
-      
+      initTheme();
+      buildExplorerTree();
+      buildCommandsModal();
+
       await fetchAllQuestsFromServer();
-      
+
       populateQuestList();
       showSchemaType('Query');
     });
@@ -1411,17 +1933,6 @@
         indentWithTabs: false,
         lineWrapping: true
       });
-    }
-
-    function startClock() {
-      const clockEl = document.getElementById('clock');
-      setInterval(() => {
-        const d = new Date();
-        const hrs = String(d.getHours()).padStart(2, '0');
-        const mins = String(d.getMinutes()).padStart(2, '0');
-        const secs = String(d.getSeconds()).padStart(2, '0');
-        clockEl.textContent = `${hrs}:${mins}:${secs}`;
-      }, 1000);
     }
 
     // ----------------------------------------------------------------
@@ -1460,7 +1971,7 @@
           }
         }
       }`;
-      
+
       try {
         const res = await fetch('/graphql', {
           method: 'POST',
@@ -1481,18 +1992,37 @@
       }
     }
 
+    async function refreshData() {
+      const btn = document.getElementById('refresh-btn');
+      btn.classList.add('spinning');
+      btn.disabled = true;
+
+      try {
+        await fetchAllQuestsFromServer();
+        populateQuestList(getFilteredQuests());
+        if (selectedQuestId !== null && allQuests.some(q => q.id === selectedQuestId)) {
+          selectQuest(selectedQuestId);
+        }
+      } finally {
+        setTimeout(() => {
+          btn.classList.remove('spinning');
+          btn.disabled = false;
+        }, 400);
+      }
+    }
+
     async function runQuery() {
       const query = queryEditor.getValue();
       const deployBtn = document.getElementById('btn-deploy');
       const outputEl = document.getElementById('telemetry-output');
       const uplinkVal = document.getElementById('uplink-status-value');
-      
+
       deployBtn.disabled = true;
       deployBtn.textContent = 'EXECUTING...';
       uplinkVal.textContent = 'Sending...';
-      
+
       const startTime = performance.now();
-      
+
       try {
         const res = await fetch('/graphql', {
           method: 'POST',
@@ -1502,25 +2032,25 @@
           },
           body: JSON.stringify({ query })
         });
-        
+
         const duration = (performance.now() - startTime).toFixed(0);
         const data = await res.json();
-        
+
         totalPackets++;
         document.getElementById('packets-count').textContent = totalPackets;
-        
+
         outputEl.textContent = JSON.stringify(data, null, 2);
         outputEl.style.color = data.errors ? 'var(--accent-red-bright)' : '#9fadb5';
-        
+
         document.getElementById('telemetry-status').textContent = `${res.status} ${res.statusText}`;
         document.getElementById('telemetry-status').style.color = res.ok ? 'var(--accent-green-bright)' : 'var(--accent-red-bright)';
         document.getElementById('telemetry-rtt').textContent = `${duration}ms`;
-        
+
         const size = (JSON.stringify(data).length / 1024).toFixed(2);
         document.getElementById('telemetry-size').textContent = `${size} KB`;
-        
+
         uplinkVal.textContent = data.errors ? 'Errors Returned' : 'Success';
-        
+
       } catch (err) {
         const duration = (performance.now() - startTime).toFixed(0);
         outputEl.textContent = JSON.stringify({ error: err.message }, null, 2);
@@ -1553,7 +2083,7 @@
           btn.classList.remove('active');
         }
       });
-      
+
       document.querySelectorAll('.tab-pane').forEach(pane => {
         if (pane.id === tabId) {
           pane.classList.add('active');
@@ -1572,47 +2102,47 @@
     function populateQuestList(filtered = null) {
       const container = document.getElementById('task-list-container');
       container.innerHTML = '';
-      
+
       const questsToRender = filtered || allQuests;
-      
+
       if (questsToRender.length === 0) {
         container.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px; font-size: 11px;">No tasks found</div>`;
         return;
       }
-      
+
       questsToRender.forEach(q => {
         const item = document.createElement('div');
         item.className = `task-list-item ${selectedQuestId === q.id ? 'active' : ''}`;
         item.onclick = () => selectQuest(q.id);
-        
+
         const info = document.createElement('div');
         info.style.overflow = 'hidden';
-        
+
         const title = document.createElement('div');
         title.className = 'task-item-title';
         title.textContent = q.title;
-        
+
         const traderName = tradersData[q.giver] ? tradersData[q.giver].name : `Trader ${q.giver}`;
         const meta = document.createElement('div');
         meta.className = 'task-item-trader';
         meta.innerHTML = `ISSUED BY: <span style="color: var(--accent-yellow);">${traderName.toUpperCase()}</span>`;
-        
+
         info.appendChild(title);
         info.appendChild(meta);
-        
+
         const status = document.createElement('div');
         status.className = `task-item-status-dot`;
-        
+
         item.appendChild(info);
         item.appendChild(status);
-        
+
         container.appendChild(item);
       });
     }
 
     function selectQuest(questId) {
       selectedQuestId = questId;
-      
+
       document.querySelectorAll('.task-list-item').forEach((item, idx) => {
         const renderedQuests = getFilteredQuests();
         if (renderedQuests[idx] && renderedQuests[idx].id === questId) {
@@ -1621,14 +2151,14 @@
           item.classList.remove('active');
         }
       });
-      
+
       const quest = allQuests.find(q => q.id === questId);
       if (!quest) return;
-      
+
       const detailsContainer = document.getElementById('task-details-content');
       const giverName = tradersData[quest.giver] ? tradersData[quest.giver].name : `Trader ${quest.giver}`;
       const turninName = tradersData[quest.turnin] ? tradersData[quest.turnin].name : `Trader ${quest.turnin}`;
-      
+
       let reqHtml = '';
       if (quest.require) {
         const minLvl = quest.require.level || 1;
@@ -1637,7 +2167,7 @@
       } else {
         reqHtml = 'None';
       }
-      
+
       let repsHtml = '';
       if (quest.reputation && quest.reputation.length > 0) {
         repsHtml = quest.reputation.map(r => {
@@ -1649,7 +2179,7 @@
       } else {
         repsHtml = 'None';
       }
-      
+
       // Build Objectives
       let objectivesHtml = '';
       if (quest.objectives && quest.objectives.length > 0) {
@@ -1675,7 +2205,7 @@
               </table>
             `;
           }
-          
+
           return `
             <div class="objective-row">
               <div style="flex: 1;">
@@ -1739,10 +2269,10 @@
     function getFilteredQuests() {
       const search = document.getElementById('task-search').value.toLowerCase();
       const trader = document.getElementById('trader-filter-select').value;
-      
+
       return allQuests.filter(q => {
-        const matchesSearch = q.title.toLowerCase().includes(search) || 
-                              q.objectives.some(o => o.target.toLowerCase().includes(search));
+        const matchesSearch = q.title.toLowerCase().includes(search) ||
+          q.objectives.some(o => o.target.toLowerCase().includes(search));
         const matchesTrader = trader === 'all' || String(q.giver) === trader;
         return matchesSearch && matchesTrader;
       });
@@ -1796,11 +2326,11 @@
           item.classList.remove('active');
         }
       });
-      
+
       const doc = schemaDocs[typeName];
       const contentEl = document.getElementById('schema-details-content');
       if (!doc) return;
-      
+
       let fieldsHtml = '';
       if (doc.fields && doc.fields.length > 0) {
         fieldsHtml = doc.fields.map(f => `
@@ -1811,7 +2341,7 @@
           </tr>
         `).join('');
       }
-      
+
       contentEl.innerHTML = `
         <div class="schema-details-title">
           ${typeName.toUpperCase()}
@@ -1880,6 +2410,216 @@
       }
       switchTab('console-tab');
     }
+
+    function initTheme() {
+      const saved = localStorage.getItem('tarkovlab-theme') || 'dark';
+      setTheme(saved);
+
+      document.addEventListener('click', (e) => {
+        const panel = document.getElementById('settings-panel');
+        const btn = document.getElementById('settings-btn');
+        if (!panel.classList.contains('d-none') && !panel.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+          panel.classList.add('d-none');
+        }
+      });
+    }
+
+    function toggleSettingsPanel() {
+      document.getElementById('settings-panel').classList.toggle('d-none');
+    }
+
+    function setTheme(theme) {
+      document.body.classList.toggle('theme-light', theme === 'light');
+      document.getElementById('theme-btn-dark').classList.toggle('active', theme === 'dark');
+      document.getElementById('theme-btn-light').classList.toggle('active', theme === 'light');
+      localStorage.setItem('tarkovlab-theme', theme);
+      if (queryEditor) {
+        setTimeout(() => queryEditor.refresh(), 10);
+      }
+    }
+
+    const quickCommands = [
+      {
+        title: 'Fetch all quests',
+        desc: 'Basic query returning the full task ledger with minimal fields.',
+        query: `{\n  quests {\n    id\n    title\n  }\n}`
+      },
+      {
+        title: 'Fetch a single quest by ID',
+        desc: 'Use the quest(id: Int!) field to target one task.',
+        query: `{\n  quest(id: 1) {\n    title\n    exp\n    giver\n  }\n}`
+      },
+      {
+        title: 'Filter quests by trader',
+        desc: 'questsByTrader accepts a trader index from 0 (Prapor) to 7 (Fence).',
+        query: `{\n  questsByTrader(trader: 0) {\n    title\n    exp\n  }\n}`
+      },
+      {
+        title: 'Nested objective fields',
+        desc: 'Traverse into objectives and their GPS coordinates in one call.',
+        query: `{\n  quests {\n    title\n    objectives {\n      type\n      target\n      gps {\n        leftPercent\n        topPercent\n        floor\n      }\n    }\n  }\n}`
+      },
+      {
+        title: 'Named query & field alias',
+        desc: 'Name your operation and rename a field in the response with an alias.',
+        query: `query MyQuests {\n  quests {\n    questTitle: title\n    xp: exp\n  }\n}`
+      },
+      {
+        title: 'Reputation rewards only',
+        desc: 'Pull just the standing changes each quest grants.',
+        query: `{\n  quests {\n    title\n    reputation {\n      trader\n      rep\n    }\n  }\n}`
+      }
+    ];
+
+    function buildCommandsModal() {
+      const body = document.getElementById('commands-modal-body');
+      body.innerHTML = quickCommands.map((c, idx) => `
+        <div class="command-card">
+          <div class="command-card-head">
+            <span class="command-card-title">${c.title}</span>
+            <button class="btn-tarkov" style="font-size: 10.5px; padding: 5px 10px;" onclick="useQuickCommand(${idx})">Use</button>
+          </div>
+          <div class="command-card-desc">${c.desc}</div>
+          <pre class="command-card-code">${c.query}</pre>
+        </div>
+      `).join('');
+    }
+
+    function useQuickCommand(idx) {
+      queryEditor.setValue(quickCommands[idx].query);
+      toggleCommandsModal();
+      switchTab('console-tab');
+    }
+
+    function toggleCommandsModal() {
+      document.getElementById('commands-modal-overlay').classList.toggle('d-none');
+    }
+
+    function closeCommandsModalOnOverlay(e) {
+      if (e.target.id === 'commands-modal-overlay') {
+        toggleCommandsModal();
+      }
+    }
+
+    function stripGqlType(type) {
+      return type.replace(/[\[\]!]/g, '');
+    }
+
+    function buildExplorerFieldsHTML(typeName, pathPrefix, depth) {
+      const doc = schemaDocs[typeName];
+      if (!doc || depth > 4) return '';
+
+      return doc.fields.map(f => {
+        const fieldName = f.name.split('(')[0];
+        const childType = stripGqlType(f.type);
+        const isObject = !!schemaDocs[childType];
+        const path = pathPrefix ? `${pathPrefix}.${fieldName}` : fieldName;
+
+        if (isObject) {
+          return `
+            <details class="explorer-node">
+              <summary>
+                <label onclick="event.stopPropagation()">
+                  <input type="checkbox" data-path="${path}" onclick="onExplorerCheck(event)">
+                  <span class="explorer-field-name">${fieldName}</span>
+                  <span class="explorer-field-type">${childType}</span>
+                </label>
+              </summary>
+              <div class="explorer-children">
+                ${buildExplorerFieldsHTML(childType, path, depth + 1)}
+              </div>
+            </details>`;
+        }
+
+        return `
+          <div class="explorer-leaf">
+            <label>
+              <input type="checkbox" data-path="${path}" onclick="onExplorerCheck(event)">
+              <span class="explorer-field-name">${fieldName}</span>
+              <span class="explorer-field-type">${f.type}</span>
+            </label>
+          </div>`;
+      }).join('');
+    }
+
+    function buildExplorerTree() {
+      document.getElementById('explorer-tree').innerHTML = buildExplorerFieldsHTML('Quest', '', 0);
+    }
+
+    function onExplorerCheck(e) {
+      const cb = e.target;
+      const node = cb.closest('.explorer-node');
+      let parentNode = cb.closest('.explorer-children');
+      while (parentNode) {
+        const parentDetails = parentNode.closest('.explorer-node');
+        if (!parentDetails) break;
+        const parentCheckbox = parentDetails.querySelector(':scope > summary input[type="checkbox"]');
+        if (cb.checked && parentCheckbox) parentCheckbox.checked = true;
+        parentNode = parentDetails.parentElement.closest('.explorer-children');
+      }
+    }
+
+    function onExplorerOperationChange() {
+      const op = document.getElementById('explorer-operation').value;
+      document.getElementById('explorer-id-input').classList.toggle('d-none', op !== 'quest');
+      document.getElementById('explorer-trader-input').classList.toggle('d-none', op !== 'questsByTrader');
+    }
+
+    function clearExplorerSelection() {
+      document.querySelectorAll('#explorer-tree input[type="checkbox"]').forEach(cb => cb.checked = false);
+    }
+
+    function buildSelectionSetFromPaths(paths) {
+      const tree = {};
+      paths.forEach(p => {
+        const parts = p.split('.');
+        let node = tree;
+        parts.forEach(part => {
+          node[part] = node[part] || {};
+          node = node[part];
+        });
+      });
+
+      function stringify(node, indent) {
+        const pad = '  '.repeat(indent);
+        return Object.keys(node).map(key => {
+          const children = node[key];
+          if (Object.keys(children).length === 0) {
+            return `${pad}${key}`;
+          }
+          return `${pad}${key} {\n${stringify(children, indent + 1)}\n${pad}}`;
+        }).join('\n');
+      }
+
+      return stringify(tree, 2);
+    }
+
+    function generateExplorerQuery() {
+      const checked = Array.from(document.querySelectorAll('#explorer-tree input[type="checkbox"]:checked'))
+        .map(cb => cb.dataset.path);
+
+      if (checked.length === 0) {
+        alert('Select at least one field in the explorer tree.');
+        return;
+      }
+
+      const selectionSet = buildSelectionSetFromPaths(checked);
+      const op = document.getElementById('explorer-operation').value;
+      let query;
+
+      if (op === 'quests') {
+        query = `query ExplorerQuery {\n  quests {\n${selectionSet}\n  }\n}`;
+      } else if (op === 'quest') {
+        const id = document.getElementById('explorer-id-input').value || 1;
+        query = `query ExplorerQuery {\n  quest(id: ${id}) {\n${selectionSet}\n  }\n}`;
+      } else {
+        const trader = document.getElementById('explorer-trader-input').value || 0;
+        query = `query ExplorerQuery {\n  questsByTrader(trader: ${trader}) {\n${selectionSet}\n  }\n}`;
+      }
+
+      queryEditor.setValue(query);
+    }
   </script>
 </body>
+
 </html>
