@@ -319,6 +319,9 @@ async function startServer() {
 
   await server.start();
 
+  // Serve static assets (landingPage.js, etc.)
+  app.use(express.static(path.join(__dirname)));
+
   // Health check – classic REST endpoint
   app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'OK' });
@@ -339,8 +342,8 @@ async function startServer() {
 
   const PORT = process.env.PORT || 3000;
   httpServer.listen(PORT, () => {
-    console.log(`🚀 Server ready at http://localhost:${PORT}/graphql`);
-    console.log(`❤️  Health check at http://localhost:${PORT}/health`);
+    console.log(`Server ready at http://localhost:${PORT}/graphql`);
+    console.log(`Health check at http://localhost:${PORT}/health`);
   });
 }
 

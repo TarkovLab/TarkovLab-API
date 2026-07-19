@@ -1,6 +1,6 @@
 {
   "name": "tarkovlab-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "## License This project is under MIT License. See [LICENSE](LICENSE) for more informations.",
   "main": "index.js",
   "scripts": {
