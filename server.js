@@ -6,46 +6,39 @@ const http = require('http');
 const path = require('path');
 const { tarkovLandingPagePlugin } = require('./tarkovLandingPage');
 
+const DATA_ORIGIN = 'https://data.tarkovlab.org';
 
 // ---------------------
-// Data loading (with robust local -> cache -> GitHub fetch fallback)
+// Data loading (fetched from data.tarkovlab.org, cached in memory)
 // ---------------------
 let cachedAchievements = null;
 let cachedAchievementsGlobal = null;
 
+function parseAchievements(raw) {
+  const parsed = JSON.parse(raw);
+  if (parsed?.data?.global) cachedAchievementsGlobal = parsed.data.global;
+  if (Array.isArray(parsed)) return parsed;
+  if (Array.isArray(parsed?.achievements)) return parsed.achievements;
+  if (Array.isArray(parsed?.data?.achievements)) return parsed.data.achievements;
+  return [];
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.text();
+}
+
 async function loadAchievements() {
   if (cachedAchievements) return cachedAchievements;
-
-  // Try 1: Remote data server data.tarkovlab.org
   try {
-    const res = await fetch('https://data.tarkovlab.org/achievements.json');
-    if (res.ok) {
-      const parsed = JSON.parse(await res.text());
-      if (parsed?.data?.global) cachedAchievementsGlobal = parsed.data.global;
-      if (Array.isArray(parsed)) cachedAchievements = parsed;
-      else if (Array.isArray(parsed?.achievements)) cachedAchievements = parsed.achievements;
-      else if (Array.isArray(parsed?.data?.achievements)) cachedAchievements = parsed.data.achievements;
-      else cachedAchievements = [];
-      return cachedAchievements;
-    }
-  } catch { }
-
-  // Try 2: GitHub backup
-  try {
-    const res = await fetch('https://raw.githubusercontent.com/TarkovLab/TarkovData/master/data/achievements.json');
-    if (res.ok) {
-      const parsed = JSON.parse(await res.text());
-      if (parsed?.data?.global) cachedAchievementsGlobal = parsed.data.global;
-      if (Array.isArray(parsed)) cachedAchievements = parsed;
-      else if (Array.isArray(parsed?.achievements)) cachedAchievements = parsed.achievements;
-      else if (Array.isArray(parsed?.data?.achievements)) cachedAchievements = parsed.data.achievements;
-      else cachedAchievements = [];
-      return cachedAchievements;
-    }
-  } catch { }
-
-  cachedAchievements = [];
-  return [];
+    const raw = await fetchJson(`${DATA_ORIGIN}/achievements.json`);
+    cachedAchievements = parseAchievements(raw);
+    return cachedAchievements;
+  } catch {
+    cachedAchievements = [];
+    return [];
+  }
 }
 
 // ---------------------
@@ -119,22 +112,30 @@ async function startServer() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    // Enable the embedded Apollo Sandbox (playground) in all environments
     introspection: true,
     plugins: [tarkovLandingPagePlugin],
   });
 
   await server.start();
 
-  // Serve static assets (landingPage.js, etc.)
   app.use(express.static(path.join(__dirname)));
 
-  // Health check – classic REST endpoint
+  // Proxy /achievements.json to data.tarkovlab.org
+  app.get('/achievements.json', async (_req, res) => {
+    try {
+      const raw = await fetchJson(`${DATA_ORIGIN}/achievements.json`);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.status(200).send(raw);
+    } catch {
+      res.status(502).json({ error: 'Failed to fetch from data.tarkovlab.org' });
+    }
+  });
+
   app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'OK' });
   });
 
-  // GraphQL endpoint with Apollo Sandbox as playground
   app.use(
     '/graphql',
     cors(),
@@ -142,7 +143,6 @@ async function startServer() {
     expressMiddleware(server),
   );
 
-  // Redirect root to playground
   app.get('/', (_req, res) => {
     res.redirect('/graphql');
   });
@@ -150,7 +150,7 @@ async function startServer() {
   const PORT = process.env.PORT || 3000;
   httpServer.listen(PORT, () => {
     console.log(`Server ready at http://localhost:${PORT}/graphql`);
-    console.log(`Health check at http://localhost:${PORT}/health`);
+    console.log(`Proxy /achievements.json -> ${DATA_ORIGIN}/achievements.json`);
   });
 }
 
