@@ -76,47 +76,6 @@ const queryPresets = {
 }`
 };
 
-async function checkStatus() {
-  const dot = document.getElementById('status-dot');
-  if (!dot) return;
-  try {
-    const res = await fetch('https://status.tarkovlab.org/api/status-page/heartbeat/tarkovlab');
-    if (!res.ok) {
-      dot.className = 'footer-status-dot orange';
-      return;
-    }
-    const data = await res.json();
-    const heartbeats = data.heartbeatList;
-    if (!heartbeats) {
-      dot.className = 'footer-status-dot orange';
-      return;
-    }
-    let allUp = true;
-    let anyDown = false;
-    for (const id in heartbeats) {
-      const beats = heartbeats[id];
-      if (beats && beats.length > 0) {
-        const latest = beats[beats.length - 1];
-        if (latest.status === 0) {
-          anyDown = true;
-          allUp = false;
-        } else if (latest.status !== 1) {
-          allUp = false;
-        }
-      }
-    }
-    if (allUp) {
-      dot.className = 'footer-status-dot green';
-    } else if (anyDown) {
-      dot.className = 'footer-status-dot red';
-    } else {
-      dot.className = 'footer-status-dot orange';
-    }
-  } catch {
-    dot.className = 'footer-status-dot red';
-  }
-}
-
 window.addEventListener('DOMContentLoaded', async () => {
   initEditor();
   queryEditor.setValue(queryPresets.allAchievements);
