@@ -1,130 +1,77 @@
-let allQuests = [];
+let allAchievements = [];
 let queryEditor = null;
 let totalPackets = 0;
 
 const schemaDocs = {
   Query: {
-    description: "The root query fields to retrieve task profiles.",
+    description: "The root query fields to retrieve achievements.",
     fields: [
-      { name: "quests", type: "[Quest!]!", desc: "Acquires the full ledger of all tasks/quests." },
-      { name: "quest(id: Int!)", type: "Quest", desc: "Retrieves a single quest profile by its integer ID." },
-      { name: "questsByTrader(trader: Int!)", type: "[Quest!]!", desc: "Retrieves all quests issued by a specific trader using their index (0-7)." }
+      { name: "achievements", type: "[Achievement!]!", desc: "Get all achievements." },
+      { name: "achievement(id: String!)", type: "Achievement", desc: "Get a single achievement by its id." },
+      { name: "achievementsByRarity(rarity: String!)", type: "[Achievement!]!", desc: "Get achievements filtered by rarity (e.g. \"common\", \"rare\", \"legendary\")." },
+      { name: "achievementsMeta", type: "AchievementsMeta", desc: "Get achievements metadata (wikilinks, etc.)." }
     ]
   },
-  Quest: {
-    description: "A task description containing prerequisites, rewards, and objectives.",
+  Achievement: {
+    description: "An achievement that can be unlocked by performing specific actions.",
     fields: [
-      { name: "id", type: "Int!", desc: "Unique identifier for this quest." },
-      { name: "title", type: "String!", desc: "Operational name of the task." },
-      { name: "locales", type: "Locales", desc: "Translations for international operations." },
-      { name: "wiki", type: "String", desc: "External link to reference database (Fandom Wiki)." },
-      { name: "exp", type: "Int", desc: "Experience points awarded upon completion." },
-      { name: "giver", type: "Int", desc: "ID of the trader who issued the task (0-7)." },
-      { name: "turnin", type: "Int", desc: "ID of the trader who receives the completed task (0-7)." },
-      { name: "gameId", type: "String", desc: "Raw internal database hash code." },
-      { name: "require", type: "QuestRequirement", desc: "PMC requirements that must be met to unlock this task." },
-      { name: "unlocks", type: "[String]", desc: "Array of game hashes unlocked upon completion." },
-      { name: "reputation", type: "[Reputation]", desc: "Reputation standing adjustments awarded." },
-      { name: "objectives", type: "[Objective]", desc: "Operational objectives that must be fulfilled." }
+      { name: "id", type: "String!", desc: "Unique identifier for this achievement." },
+      { name: "name", type: "String!", desc: "Display name of the achievement." },
+      { name: "description", type: "String", desc: "Description of how to unlock the achievement." },
+      { name: "rarity", type: "String", desc: "Rarity tier (e.g. Common, Rare, Legendary)." },
+      { name: "normalizedRarity", type: "String", desc: "Lowercase normalized rarity value." },
+      { name: "hidden", type: "Boolean", desc: "Whether the achievement is hidden until unlocked." },
+      { name: "imageLink", type: "String", desc: "URL to the achievement icon." },
+      { name: "gameId", type: "String", desc: "Raw internal game database hash." },
+      { name: "category", type: "String", desc: "Category the achievement belongs to (e.g. raid, kill)." },
+      { name: "PvPOnly", type: "Boolean", desc: "Whether this achievement requires PvP mode." }
     ]
   },
-  Objective: {
-    description: "A specific action that must be taken to satisfy a task's requirements.",
+  AchievementsMeta: {
+    description: "Metadata for achievements including wiki links.",
     fields: [
-      { name: "id", type: "Int", desc: "Objective identifier index." },
-      { name: "type", type: "String", desc: "Action type: 'kill', 'collect', 'pickup', 'key', 'locate', etc." },
-      { name: "target", type: "String", desc: "Target name, item hash, or specific description of the objective." },
-      { name: "number", type: "Int", desc: "Count or quantity required." },
-      { name: "location", type: "Int", desc: "Location ID where the objective must be completed." },
-      { name: "gps", type: "GPS", desc: "Tactical positioning coordinates, if available." }
-    ]
-  },
-  GPS: {
-    description: "Tactical positioning coordinates mapping the location of an objective.",
-    fields: [
-      { name: "leftPercent", type: "Float", desc: "X-axis percentage offset on the map." },
-      { name: "topPercent", type: "Float", desc: "Y-axis percentage offset on the map." },
-      { name: "floor", type: "String", desc: "Elevation or floor layer where the objective is located." }
-    ]
-  },
-  Reputation: {
-    description: "Reputation adjustment data indicating standing shifts with traders.",
-    fields: [
-      { name: "trader", type: "Int", desc: "ID of the trader whose reputation is adjusted (0-7)." },
-      { name: "rep", type: "Float", desc: "Numeric value added or subtracted from standing." }
-    ]
-  },
-  QuestRequirement: {
-    description: "Prerequisites required of the PMC operator before the task unlocks.",
-    fields: [
-      { name: "level", type: "Int", desc: "Minimum PMC level required." },
-      { name: "quests", type: "[Int]", desc: "Prior quest IDs that must be completed." }
-    ]
-  },
-  Locales: {
-    description: "Localization strings.",
-    fields: [
-      { name: "en", type: "String", desc: "English localization." },
-      { name: "ru", type: "String", desc: "Russian localization." },
-      { name: "cs", type: "String", desc: "Czech localization." }
+      { name: "wikilink", type: "String", desc: "Link to the Tarkov wiki achievements page." },
+      { name: "antifandomLink", type: "String", desc: "Link to the antifandom wiki achievements page." }
     ]
   }
 };
 
 const queryPresets = {
-  allQuests: `query FetchAllQuests {
-  quests {
+  allAchievements: `query FetchAllAchievements {
+  achievements {
     id
-    title
-    giver
-    exp
-    wiki
-    objectives {
-      type
-      target
-      number
-      gps {
-        leftPercent
-        topPercent
-        floor
-      }
-    }
+    name
+    description
+    rarity
+    normalizedRarity
+    category
+    imageLink
+    PvPOnly
   }
 }`,
-  singleQuest: `query FetchSingleQuest {
-  quest(id: 1) {
+  singleAchievement: `query FetchSingleAchievement {
+  achievement(id: "achievements-pmc_s_best_friend") {
     id
-    title
-    exp
-    giver
-    turnin
-    wiki
-    require {
-      level
-      quests
-    }
-    reputation {
-      trader
-      rep
-    }
-    objectives {
-      type
-      target
-      number
-    }
+    name
+    description
+    rarity
+    category
+    imageLink
   }
 }`,
-  questsByTrader: `query FetchQuestsByTrader {
-  questsByTrader(trader: 0) {
+  achievementsByRarity: `query FetchByRarity {
+  achievementsByRarity(rarity: "legendary") {
     id
-    title
-    exp
-    wiki
-    objectives {
-      type
-      target
-      number
-    }
+    name
+    description
+    rarity
+    category
+  }
+}`,
+  achievementsMeta: `query FetchAchievementsMeta {
+  achievementsMeta {
+    wikilink
+    antifandomLink
   }
 }`
 };
@@ -172,13 +119,13 @@ async function checkStatus() {
 
 window.addEventListener('DOMContentLoaded', async () => {
   initEditor();
-  queryEditor.setValue(queryPresets.allQuests);
+  queryEditor.setValue(queryPresets.allAchievements);
   initTheme();
   buildExplorerTree();
   buildCommandsModal();
   checkStatus();
 
-  await fetchAllQuestsFromServer();
+  await fetchAllAchievementsFromServer();
 
   showSchemaType('Query');
 });
@@ -195,37 +142,19 @@ function initEditor() {
   });
 }
 
-async function fetchAllQuestsFromServer() {
+async function fetchAllAchievementsFromServer() {
   const query = `query {
-    quests {
+    achievements {
       id
-      title
-      wiki
-      exp
-      giver
-      turnin
+      name
+      description
+      rarity
+      normalizedRarity
+      hidden
+      imageLink
       gameId
-      require {
-        level
-        quests
-      }
-      unlocks
-      reputation {
-        trader
-        rep
-      }
-      objectives {
-        id
-        type
-        target
-        number
-        location
-        gps {
-          leftPercent
-          topPercent
-          floor
-        }
-      }
+      category
+      PvPOnly
     }
   }`;
 
@@ -239,13 +168,13 @@ async function fetchAllQuestsFromServer() {
       body: JSON.stringify({ query })
     });
     const result = await res.json();
-    if (result.data && result.data.quests) {
-      allQuests = result.data.quests;
+    if (result.data && result.data.achievements) {
+      allAchievements = result.data.achievements;
       totalPackets += 1;
       document.getElementById('packets-count').textContent = totalPackets;
     }
   } catch (err) {
-    console.error("Failed to load quests database:", err);
+    console.error("Failed to load achievements database:", err);
   }
 }
 
@@ -384,43 +313,14 @@ function showSchemaType(typeName) {
 }
 
 function loadPresetForType(typeName) {
-  if (typeName === 'Query' || typeName === 'Quest') {
-    loadQueryPreset('allQuests');
-  } else if (typeName === 'GPS') {
-    queryEditor.setValue(`query FetchGPSPositions {
-  quests {
-    title
-    objectives {
-      target
-      gps {
-        leftPercent
-        topPercent
-        floor
-      }
-    }
-  }
-}`);
-  } else if (typeName === 'Reputation') {
-    queryEditor.setValue(`query FetchReputations {
-  quests {
-    title
-    reputation {
-      trader
-      rep
-    }
-  }
-}`);
+  if (typeName === 'Query') {
+    loadQueryPreset('allAchievements');
+  } else if (typeName === 'Achievement') {
+    loadQueryPreset('singleAchievement');
+  } else if (typeName === 'AchievementsMeta') {
+    loadQueryPreset('achievementsMeta');
   } else {
-    queryEditor.setValue(`query FetchQuestDetails {
-  quests {
-    id
-    title
-    objectives {
-      type
-      target
-    }
-  }
-}`);
+    loadQueryPreset('allAchievements');
   }
   switchTab('console-tab');
 }
@@ -454,34 +354,34 @@ function setTheme(theme) {
 
 const quickCommands = [
   {
-    title: 'Fetch all quests',
-    desc: 'Basic query returning the full task ledger with minimal fields.',
-    query: `{\n  quests {\n    id\n    title\n  }\n}`
+    title: 'Fetch all achievements',
+    desc: 'Basic query returning all achievements.',
+    query: `{\n  achievements {\n    id\n    name\n  }\n}`
   },
   {
-    title: 'Fetch a single quest by ID',
-    desc: 'Use the quest(id: Int!) field to target one task.',
-    query: `{\n  quest(id: 1) {\n    title\n    exp\n    giver\n  }\n}`
+    title: 'Fetch a single achievement by ID',
+    desc: 'Use the achievement(id: String!) field to target one achievement.',
+    query: `{\n  achievement(id: "achievements-traveler") {\n    name\n    description\n    rarity\n  }\n}`
   },
   {
-    title: 'Filter quests by trader',
-    desc: 'questsByTrader accepts a trader index from 0 (Prapor) to 7 (Fence).',
-    query: `{\n  questsByTrader(trader: 0) {\n    title\n    exp\n  }\n}`
+    title: 'Filter achievements by rarity',
+    desc: 'achievementsByRarity accepts a rarity value like "common", "rare" or "legendary".',
+    query: `{\n  achievementsByRarity(rarity: "legendary") {\n    name\n    description\n    category\n  }\n}`
   },
   {
-    title: 'Nested objective fields',
-    desc: 'Traverse into objectives and their GPS coordinates in one call.',
-    query: `{\n  quests {\n    title\n    objectives {\n      type\n      target\n      gps {\n        leftPercent\n        topPercent\n        floor\n      }\n    }\n  }\n}`
+    title: 'Achievement metadata',
+    desc: 'Get wiki links and other metadata for achievements.',
+    query: `{\n  achievementsMeta {\n    wikilink\n    antifandomLink\n  }\n}`
+  },
+  {
+    title: 'Hidden achievements only',
+    desc: 'Fetch achievements that are hidden until unlocked.',
+    query: `{\n  achievements {\n    id\n    name\n    hidden\n    description\n  }\n}`
   },
   {
     title: 'Named query & field alias',
-    desc: 'Name your operation and rename a field in the response with an alias.',
-    query: `query MyQuests {\n  quests {\n    questTitle: title\n    xp: exp\n  }\n}`
-  },
-  {
-    title: 'Reputation rewards only',
-    desc: 'Pull just the standing changes each quest grants.',
-    query: `{\n  quests {\n    title\n    reputation {\n      trader\n      rep\n    }\n  }\n}`
+    desc: 'Name your operation and rename a field with an alias.',
+    query: `query MyAchievements {\n  achievements {\n    achievementName: name\n    difficulty: rarity\n  }\n}`
   }
 ];
 
@@ -557,7 +457,7 @@ function buildExplorerFieldsHTML(typeName, pathPrefix, depth) {
 }
 
 function buildExplorerTree() {
-  document.getElementById('explorer-tree').innerHTML = buildExplorerFieldsHTML('Quest', '', 0);
+  document.getElementById('explorer-tree').innerHTML = buildExplorerFieldsHTML('Achievement', '', 0);
 }
 
 function onExplorerCheck(e) {
@@ -575,8 +475,7 @@ function onExplorerCheck(e) {
 
 function onExplorerOperationChange() {
   const op = document.getElementById('explorer-operation').value;
-  document.getElementById('explorer-id-input').classList.toggle('d-none', op !== 'quest');
-  document.getElementById('explorer-trader-input').classList.toggle('d-none', op !== 'questsByTrader');
+  document.getElementById('explorer-id-input').classList.toggle('d-none', op !== 'achievement');
 }
 
 function clearExplorerSelection() {
@@ -621,14 +520,13 @@ function generateExplorerQuery() {
   const op = document.getElementById('explorer-operation').value;
   let query;
 
-  if (op === 'quests') {
-    query = `query ExplorerQuery {\n  quests {\n${selectionSet}\n  }\n}`;
-  } else if (op === 'quest') {
-    const id = document.getElementById('explorer-id-input').value || 1;
-    query = `query ExplorerQuery {\n  quest(id: ${id}) {\n${selectionSet}\n  }\n}`;
+  if (op === 'achievements') {
+    query = `query ExplorerQuery {\n  achievements {\n${selectionSet}\n  }\n}`;
+  } else if (op === 'achievement') {
+    const id = document.getElementById('explorer-id-input').value || 'achievements-traveler';
+    query = `query ExplorerQuery {\n  achievement(id: "${id}") {\n${selectionSet}\n  }\n}`;
   } else {
-    const trader = document.getElementById('explorer-trader-input').value || 0;
-    query = `query ExplorerQuery {\n  questsByTrader(trader: ${trader}) {\n${selectionSet}\n  }\n}`;
+    query = `query ExplorerQuery {\n  achievementsByRarity(rarity: "legendary") {\n${selectionSet}\n  }\n}`;
   }
 
   queryEditor.setValue(query);

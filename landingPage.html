@@ -1186,21 +1186,11 @@
 
           <div class="explorer-controls">
             <select id="explorer-operation" onchange="onExplorerOperationChange()">
-              <option value="quests">quests — All Quests</option>
-              <option value="quest">quest(id) — Single Quest</option>
-              <option value="questsByTrader">questsByTrader — By Trader</option>
+              <option value="achievements">achievements — All Achievements</option>
+              <option value="achievement">achievement(id) — Single Achievement</option>
+              <option value="achievementsByRarity">achievementsByRarity — By Rarity</option>
             </select>
-            <input id="explorer-id-input" type="number" min="1" value="1" placeholder="Quest ID" class="d-none">
-            <select id="explorer-trader-input" class="d-none">
-              <option value="0">Prapor</option>
-              <option value="1">Therapist</option>
-              <option value="2">Skier</option>
-              <option value="3">Peacekeeper</option>
-              <option value="4">Mechanic</option>
-              <option value="5">Ragman</option>
-              <option value="6">Jaeger</option>
-              <option value="7">Fence</option>
-            </select>
+            <input id="explorer-id-input" type="text" value="achievements-traveler" placeholder="Achievement ID" class="d-none">
           </div>
 
           <div id="explorer-tree" class="explorer-tree"></div>
@@ -1221,9 +1211,9 @@
 
           <div class="presets-bar">
             <span class="presets-label">Presets:</span>
-            <button class="btn-tarkov" onclick="loadQueryPreset('allQuests')">All Quests</button>
-            <button class="btn-tarkov" onclick="loadQueryPreset('singleQuest')">Single Quest</button>
-            <button class="btn-tarkov" onclick="loadQueryPreset('questsByTrader')">By Trader</button>
+            <button class="btn-tarkov" onclick="loadQueryPreset('allAchievements')">All Achievements</button>
+            <button class="btn-tarkov" onclick="loadQueryPreset('singleAchievement')">Single Achievement</button>
+            <button class="btn-tarkov" onclick="loadQueryPreset('achievementsByRarity')">By Rarity</button>
           </div>
 
           <div class="editor-container">
@@ -1280,17 +1270,9 @@
           <div class="schema-nav-list">
             <div class="schema-nav-item active" onclick="showSchemaType('Query')">Query <span
                 class="schema-nav-badge">Query</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('Quest')">Quest <span
+            <div class="schema-nav-item" onclick="showSchemaType('Achievement')">Achievement <span
                 class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('Objective')">Objective <span
-                class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('GPS')">GPS <span class="schema-nav-badge">Type</span>
-            </div>
-            <div class="schema-nav-item" onclick="showSchemaType('Reputation')">Reputation <span
-                class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('QuestRequirement')">QuestRequirement <span
-                class="schema-nav-badge">Type</span></div>
-            <div class="schema-nav-item" onclick="showSchemaType('Locales')">Locales <span
+            <div class="schema-nav-item" onclick="showSchemaType('AchievementsMeta')">AchievementsMeta <span
                 class="schema-nav-badge">Type</span></div>
           </div>
         </div>
