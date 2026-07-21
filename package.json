@@ -19,9 +19,13 @@
   },
   "homepage": "https://github.com/TarkovLab/Tarkovlab-api#readme",
   "dependencies": {
-    "@apollo/server": "^4.13.0",
+    "@apollo/server": "^5.5.1",
+    "@as-integrations/express4": "^1.1.2",
     "cors": "^2.8.6",
     "express": "^4.22.2",
     "graphql": "^16.14.2"
+  },
+  "allowScripts": {
+    "@apollo/protobufjs@1.2.8": true
   }
 }

@@ -1,5 +1,5 @@
 const { ApolloServer } = require('@apollo/server');
-const { expressMiddleware } = require('@apollo/server/express4');
+const { expressMiddleware } = require('@as-integrations/express4');
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
