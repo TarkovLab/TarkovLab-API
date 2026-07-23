@@ -41,6 +41,21 @@ async function loadAchievements() {
   }
 }
 
+async function refreshData() {
+  try {
+    const raw = await fetchJson(`${DATA_ORIGIN}/achievements.json`);
+    cachedAchievements = parseAchievements(raw);
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] Failed to refresh data:`, err.message);
+  }
+}
+
+function startDataRefresh() {
+  refreshData();
+  setInterval(refreshData, 60_000);
+  console.log(`Data will be refreshed every 60 seconds from ${DATA_ORIGIN}`);
+}
+
 // ---------------------
 // GraphQL Schema
 // ---------------------
@@ -146,6 +161,8 @@ async function startServer() {
   app.get('/', (_req, res) => {
     res.redirect('/graphql');
   });
+
+  startDataRefresh();
 
   const PORT = process.env.PORT || 3000;
   httpServer.listen(PORT, () => {
